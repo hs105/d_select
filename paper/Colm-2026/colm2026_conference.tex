@@ -458,6 +458,32 @@ The SVD + QK fine-tuning pipeline scales to 7B parameters with consistent qualit
 
 These results confirm that the SVD + QK fine-tuning approach is practical at production scale: compressing key projections in a 7B model, then fine-tuning only the QK projections ($\sim$671M of 7.2B parameters, 9.3\%) for 3 epochs on 10M tokens, yields 75\% key cache savings at $\sim$2\% quality cost.
 
+\paragraph{Downstream task evaluation.}
+Perplexity is a useful aggregate metric, but reviewers and practitioners rightly ask whether small PPL gaps translate to larger degradation on specific capabilities. We evaluate all Mistral-7B variants on five standard benchmarks: Hellaswag (10-shot), ARC-Challenge (25-shot), WinoGrande (5-shot), MMLU (5-shot), and GSM8K (5-shot chain-of-thought). For each compressed model, we also evaluate a \emph{control}: the uncompressed model fine-tuned identically (same data, epochs, and hyperparameters), isolating the effect of compression from domain shift.
+
+\begin{table}[h]
+\centering
+\caption{Downstream task evaluation of SVD-compressed Mistral-7B. ``+FT'' denotes 3 epochs of QK fine-tuning on WikiText-103. ``Ctrl+FT'' is the uncompressed model with identical fine-tuning (fair comparison baseline). $\Delta$ columns show the residual compression gap vs Ctrl+FT.}
+\label{tab:downstream}
+\begin{tabular}{lccccccc}
+\toprule
+Task & Metric & Baseline & r512 +FT & r256 +FT & Ctrl+FT & $\Delta_{512}$ & $\Delta_{256}$ \\
+\midrule
+Hellaswag & acc\_norm & 81.2 & 81.4 & 80.7 & 81.3 & $+$0.1 & $-$0.7 \\
+ARC-Challenge & acc\_norm & 54.0 & 54.1 & 53.4 & 54.4 & $-$0.5 & $-$1.7 \\
+WinoGrande & acc & 75.4 & 73.2 & 72.1 & 73.2 & $+$0.0 & $-$1.6 \\
+MMLU & acc & 60.1 & 55.2 & 54.4 & 55.7 & $-$0.9 & $-$2.3 \\
+GSM8K & exact\_match & 38.4 & 27.7 & 25.8 & 29.9 & $-$7.4 & $-$13.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At rank 512 (50\% K cache saved), compression is effectively lossless on knowledge and commonsense tasks: Hellaswag, ARC-Challenge, and WinoGrande show $<$1\% degradation vs the control, and MMLU degrades by only 0.9\%. At rank 256 (75\% K cache saved), gaps on these tasks remain modest (0.7--2.3\%).
+
+GSM8K (multi-step math reasoning) is the outlier: even rank 512 loses 7.4\% relative to the control, and rank 256 loses 13.7\%. This confirms that perplexity understates the impact on chain-of-thought reasoning tasks, where precise attention routing over many steps is critical. Practitioners should select their operating point accordingly: rank 512 for near-lossless compression on knowledge tasks, rank 256 for aggressive savings with a known reasoning cost.
+
+We note that fine-tuning on WikiText-103 introduces mild domain shift that affects \emph{all} models (including the control), particularly on MMLU and GSM8K. The $\Delta$ columns isolate the compression-specific gap. We expect that fine-tuning on a more diverse corpus would improve absolute scores across the board; we leave this exploration to future work.
+
 
 % ============================================================
 % 4. ANALYSIS

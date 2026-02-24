@@ -1,0 +1,259 @@
+{
+  "model": "mistral-7b",
+  "rank": 1024,
+  "k_dim": 1024,
+  "is_compressed": false,
+  "k_cache_saved": "0%",
+  "tasks": {
+    "gsm8k": {},
+    "mmlu": {
+      "acc": 0.6013,
+      "acc_stderr": 0.0039
+    },
+    "mmlu_humanities": {
+      "acc": 0.5394,
+      "acc_stderr": 0.0067
+    },
+    "mmlu_formal_logic": {
+      "acc": 0.3254,
+      "acc_stderr": 0.0419
+    },
+    "mmlu_high_school_european_history": {
+      "acc": 0.7515,
+      "acc_stderr": 0.0337
+    },
+    "mmlu_high_school_us_history": {
+      "acc": 0.7745,
+      "acc_stderr": 0.0293
+    },
+    "mmlu_high_school_world_history": {
+      "acc": 0.7764,
+      "acc_stderr": 0.0271
+    },
+    "mmlu_international_law": {
+      "acc": 0.7603,
+      "acc_stderr": 0.039
+    },
+    "mmlu_jurisprudence": {
+      "acc": 0.7407,
+      "acc_stderr": 0.0424
+    },
+    "mmlu_logical_fallacies": {
+      "acc": 0.7546,
+      "acc_stderr": 0.0338
+    },
+    "mmlu_moral_disputes": {
+      "acc": 0.6618,
+      "acc_stderr": 0.0255
+    },
+    "mmlu_moral_scenarios": {
+      "acc": 0.2425,
+      "acc_stderr": 0.0143
+    },
+    "mmlu_philosophy": {
+      "acc": 0.6977,
+      "acc_stderr": 0.0261
+    },
+    "mmlu_prehistory": {
+      "acc": 0.7068,
+      "acc_stderr": 0.0253
+    },
+    "mmlu_professional_law": {
+      "acc": 0.4596,
+      "acc_stderr": 0.0127
+    },
+    "mmlu_world_religions": {
+      "acc": 0.8129,
+      "acc_stderr": 0.0299
+    },
+    "mmlu_other": {
+      "acc": 0.6839,
+      "acc_stderr": 0.0081
+    },
+    "mmlu_business_ethics": {
+      "acc": 0.59,
+      "acc_stderr": 0.0494
+    },
+    "mmlu_clinical_knowledge": {
+      "acc": 0.6679,
+      "acc_stderr": 0.029
+    },
+    "mmlu_college_medicine": {
+      "acc": 0.6243,
+      "acc_stderr": 0.0369
+    },
+    "mmlu_global_facts": {
+      "acc": 0.35,
+      "acc_stderr": 0.0479
+    },
+    "mmlu_human_aging": {
+      "acc": 0.6682,
+      "acc_stderr": 0.0316
+    },
+    "mmlu_management": {
+      "acc": 0.8058,
+      "acc_stderr": 0.0392
+    },
+    "mmlu_marketing": {
+      "acc": 0.8376,
+      "acc_stderr": 0.0242
+    },
+    "mmlu_medical_genetics": {
+      "acc": 0.68,
+      "acc_stderr": 0.0469
+    },
+    "mmlu_miscellaneous": {
+      "acc": 0.7944,
+      "acc_stderr": 0.0145
+    },
+    "mmlu_nutrition": {
+      "acc": 0.719,
+      "acc_stderr": 0.0257
+    },
+    "mmlu_professional_accounting": {
+      "acc": 0.4894,
+      "acc_stderr": 0.0298
+    },
+    "mmlu_professional_medicine": {
+      "acc": 0.6875,
+      "acc_stderr": 0.0282
+    },
+    "mmlu_virology": {
+      "acc": 0.5,
+      "acc_stderr": 0.0389
+    },
+    "mmlu_social_sciences": {
+      "acc": 0.703,
+      "acc_stderr": 0.008
+    },
+    "mmlu_econometrics": {
+      "acc": 0.4561,
+      "acc_stderr": 0.0469
+    },
+    "mmlu_high_school_geography": {
+      "acc": 0.7222,
+      "acc_stderr": 0.0319
+    },
+    "mmlu_high_school_government_and_politics": {
+      "acc": 0.8549,
+      "acc_stderr": 0.0254
+    },
+    "mmlu_high_school_macroeconomics": {
+      "acc": 0.6154,
+      "acc_stderr": 0.0247
+    },
+    "mmlu_high_school_microeconomics": {
+      "acc": 0.6261,
+      "acc_stderr": 0.0314
+    },
+    "mmlu_high_school_psychology": {
+      "acc": 0.7853,
+      "acc_stderr": 0.0176
+    },
+    "mmlu_human_sexuality": {
+      "acc": 0.7786,
+      "acc_stderr": 0.0364
+    },
+    "mmlu_professional_psychology": {
+      "acc": 0.6258,
+      "acc_stderr": 0.0196
+    },
+    "mmlu_public_relations": {
+      "acc": 0.6636,
+      "acc_stderr": 0.0453
+    },
+    "mmlu_security_studies": {
+      "acc": 0.6898,
+      "acc_stderr": 0.0296
+    },
+    "mmlu_sociology": {
+      "acc": 0.8657,
+      "acc_stderr": 0.0241
+    },
+    "mmlu_us_foreign_policy": {
+      "acc": 0.85,
+      "acc_stderr": 0.0359
+    },
+    "mmlu_stem": {
+      "acc": 0.5132,
+      "acc_stderr": 0.0086
+    },
+    "mmlu_abstract_algebra": {
+      "acc": 0.29,
+      "acc_stderr": 0.0456
+    },
+    "mmlu_anatomy": {
+      "acc": 0.5778,
+      "acc_stderr": 0.0427
+    },
+    "mmlu_astronomy": {
+      "acc": 0.6184,
+      "acc_stderr": 0.0395
+    },
+    "mmlu_college_biology": {
+      "acc": 0.6944,
+      "acc_stderr": 0.0385
+    },
+    "mmlu_college_chemistry": {
+      "acc": 0.47,
+      "acc_stderr": 0.0502
+    },
+    "mmlu_college_computer_science": {
+      "acc": 0.55,
+      "acc_stderr": 0.05
+    },
+    "mmlu_college_mathematics": {
+      "acc": 0.33,
+      "acc_stderr": 0.0473
+    },
+    "mmlu_college_physics": {
+      "acc": 0.451,
+      "acc_stderr": 0.0495
+    },
+    "mmlu_computer_security": {
+      "acc": 0.75,
+      "acc_stderr": 0.0435
+    },
+    "mmlu_conceptual_physics": {
+      "acc": 0.5191,
+      "acc_stderr": 0.0327
+    },
+    "mmlu_electrical_engineering": {
+      "acc": 0.5931,
+      "acc_stderr": 0.0409
+    },
+    "mmlu_elementary_mathematics": {
+      "acc": 0.3968,
+      "acc_stderr": 0.0252
+    },
+    "mmlu_high_school_biology": {
+      "acc": 0.7452,
+      "acc_stderr": 0.0248
+    },
+    "mmlu_high_school_chemistry": {
+      "acc": 0.5172,
+      "acc_stderr": 0.0352
+    },
+    "mmlu_high_school_computer_science": {
+      "acc": 0.66,
+      "acc_stderr": 0.0476
+    },
+    "mmlu_high_school_mathematics": {
+      "acc": 0.3593,
+      "acc_stderr": 0.0293
+    },
+    "mmlu_high_school_physics": {
+      "acc": 0.3377,
+      "acc_stderr": 0.0386
+    },
+    "mmlu_high_school_statistics": {
+      "acc": 0.4676,
+      "acc_stderr": 0.034
+    },
+    "mmlu_machine_learning": {
+      "acc": 0.4643,
+      "acc_stderr": 0.0473
+    }
+  },
+  "elapsed_minutes": 41.5
+}
