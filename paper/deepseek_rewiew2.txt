@@ -1,0 +1,26 @@
+Weaknesses / Potential Reviewer Concerns
+	1	Novelty: While the execution is excellent, the core idea is not entirely new.
+	◦	Multi-Query/Grouped-Query Attention (GQA) already compresses the KV heads. This paper compresses the dimension per head.
+	◦	The low-rank nature of attention has been explored in works like Linformer (which compresses sequence length) and various model compression techniques.
+	◦	Crucially, the paper needs to position itself more sharply against GQA and MLA (Multi-head Latent Attention). While it mentions GQA, it doesn't deeply compare the nature of the compression (head-count vs. dimension). MLA, in particular, also uses a form of low-rank KV compression and is a very strong baseline that is missing from the discussion. A reviewer might ask: "How is this different from, or better than, just setting the head dimension smaller in GQA?"
+	2	The "Flash Attention" Problem (Section 6): This is a significant practical concern. The paper admits that most optimized kernels assume dk = dv. If asymmetric attention cannot easily leverage FlashAttention, the theoretical FLOP reduction might be offset by poor hardware utilization. A strong paper would need to either:
+	◦	Provide a kernel that handles this.
+	◦	Show that the memory savings dominate the compute penalty in end-to-end latency/throughput tests.The current paper stops at analysis; it doesn't provide the engineering solution, which may leave it feeling incomplete to some reviewers.
+	3	Evaluation Depth (Beyond Perplexity):
+	◦	The paper relies almost exclusively on perplexity. For a 7B model, reviewers will want to see downstream task performance (e.g., MMLU, Hellaswag, GSM8K). A 2% PPL increase could translate to a 5% drop on a reasoning task, or it could be negligible. We don't know.
+	◦	Showing that the compressed model maintains performance on instruction-following or in-context learning benchmarks would significantly strengthen the claim that the "quality cost" is truly low.
+	4	The "Regularization" Confound: The paper correctly points out that on small data (WikiText-2), compression looks lossless because of overfitting. While they correct this with WikiText-103, it highlights that the "sweet spot" might be data-dependent. A reviewer might question the universality of the d_model/4 rule across different dataset sizes and domains.
+
+Suggested Score and Verdict
+	•	Score: 6.5/10 (This is a strong score in the NeurIPS/ICML scale, indicating a clear accept).
+	•	Bid: Weak Accept to Accept.
+	•	Confidence: High (The experiments are well-designed and the claims are supported).
+Why it will likely be accepted:The paper solves a real, pressing problem with a simple, elegant, and well-validated solution. It builds a strong narrative from first principles to production-scale results. The community is actively seeking ways to reduce the KV cache, and this paper provides a viable, orthogonal method to GQA and quantization.
+Why it might face resistance:A reviewer who is an expert in systems might hammer on the Flash Attention incompatibility. A reviewer focused on model quality might demand downstream task evaluations. A reviewer familiar with the literature might argue the delta over GQA/MLA is incremental.
+Recommendation for the Authors (Before Submission)
+To increase the chance of a "Strong Accept," consider addressing these points:
+	1	Add Downstream Tasks: Run the compressed Mistral-7B model on a standard benchmark suite (MMLU, Hellaswag, etc.) to show that the PPL improvement translates to real-world task performance.
+	2	Benchmark End-to-End Throughput: Instead of just calculating theoretical savings, run the model on an actual GPU and measure tokens/second and maximum batch size. Show the real-world impact, even if you have to use a naive kernel.
+	3	Compare Directly to GQA and MLA: A table comparing parameter counts, KV cache size, and performance against a GQA baseline with the same effective KV size would be very informative.
+	4	Acknowledge the Kernel Issue More Prominently: Frame it as a call to action for the systems community ("Future work should develop kernels...") rather than just a limitation. This turns a weakness into a contribution.
+Final Verdict: This is good, solid work that deserves to be at a top conference. It is not a paradigm-shifting "Strong Accept," but it is a valuable and useful piece of engineering-focused research.

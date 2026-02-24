@@ -1,0 +1,754 @@
+\documentclass{article} % For LaTeX2e
+\usepackage[submission]{colm2026_conference}
+
+% Additional packages (from your original preamble, without conflicts)
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage[pass]{geometry}   % do not override COLM's page layout
+\usepackage{microtype}        % recommended by COLM template
+\usepackage{hyperref}
+\usepackage{url}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% Custom commands from your paper
+\newcommand{\dmodel}{d_{\text{model}}}
+\newcommand{\dselect}{d_{\text{select}}}
+\newcommand{\dvalue}{d_{\text{value}}}
+\newcommand{\dhead}{d_{\text{head}}}
+\newcommand{\softmax}{\text{softmax}}
+\newcommand{\BigO}{\mathcal{O}}
+
+% Title
+\title{Thin Keys, Full Values: \\
+Reducing KV Cache via Low-Dimensional Attention Selection}
+
+% Authors (formatted according to COML template)
+\author{%
+  Hengshuai Yao\textsuperscript{1,2} \quad Guan Wang\textsuperscript{1} \\
+  \textsuperscript{1}Sapient Intelligence \\
+  \textsuperscript{2}Department of Computing Science, University of Alberta \\
+  \texttt{\{hengshu1@ualberta.ca, one@sapient.inc\}}%
+}
+
+\begin{document}
+
+\ifcolmsubmission
+\linenumbers
+\fi
+
+\maketitle
+
+\begin{abstract}
+Standard transformer attention uses identical dimensionality for queries, keys, and values ($d_q = d_k = d_v = \dmodel$). Our insight is that these components serve fundamentally different roles, and this symmetry is unnecessary. Queries and keys produce scalar attention weights (\emph{selection}), while values carry rich semantic representations (\emph{value transfer}). We argue that selection is an inherently lower-dimensional operation than value transfer, requiring only $\BigO(\log N)$ dimensions to distinguish among $N$ relevant patterns. We validate this hypothesis across seven experiments: (1)~positional selection tasks requiring just 1~dimension per head, (2)~content-based retrieval requiring $\sim\!\log_2 N$ dimensions, (3--4)~WikiText-2 and WikiText-103 language modeling where $\dselect = \dmodel/4$ incurs only 4.3\% perplexity increase while reducing QK parameters by 75\%, (5)~post-training SVD compression of GPT-2, revealing keys to be far more compressible than queries, with lightweight QK fine-tuning recovering nearly all quality loss, (6)~a 125M-parameter LLaMA model confirming identical degradation ratios across architectures, and (7)~Mistral-7B (7.2B parameters), where SVD compression followed by QK fine-tuning achieves 75\% key cache savings at just 2.0\% residual quality cost. For existing models, SVD compression followed by QK fine-tuning (3 epochs on a small fraction of pretraining data) achieves 75\% key cache savings at $<$2\% residual quality cost. For a 7B-parameter model serving 128K context, asymmetric attention saves 25\,GB of KV cache per user, enabling approximately 60\% more concurrent users on the same GPU.
+\end{abstract}
+
+% ============================================================
+% 1. INTRODUCTION
+% ============================================================
+\section{Introduction}
+
+The self-attention mechanism \citep{vaswani2017attention} computes:
+\begin{equation}
+\text{Attention}(Q, K, V) = \softmax\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
+\label{eq:attention}
+\end{equation}
+where $Q = XW_Q$, $K = XW_K$, and $V = XW_V$ are linear projections of the input sequence $X \in \mathbb{R}^{n \times \dmodel}$. In virtually all modern transformer architectures---GPT \citep{radford2018improving}, BERT \citep{devlin2019bert}, LLaMA \citep{touvron2023llama}---the projection dimensionality is identical: $d_q = d_k = d_v = \dmodel$.
+
+This symmetry is a design convention, not a necessity. Attention performs two functionally distinct operations:
+
+\begin{enumerate}
+    \item \textbf{Selection} ($QK^\top$): Determines \emph{which} tokens are relevant to each query position. The output is a matrix of scalar attention weights---regardless of the dimensionality of $Q$ and $K$, the product $QK^\top \in \mathbb{R}^{n \times n}$ contains only scalar similarity scores.
+
+    \item \textbf{Value transfer} ($\text{attn} \cdot V$): Extracts and aggregates \emph{information} from the selected tokens. The output must preserve the full representational capacity of the model, carrying semantic, syntactic, and positional information forward through layers.
+\end{enumerate}
+
+These operations have fundamentally different complexity requirements. Selection is a \emph{ranking} problem: given a query, assign higher scores to relevant tokens and lower scores to irrelevant ones. By the Johnson--Lindenstrauss lemma \citep{johnson1984extensions}, distinguishing among $N$ items in a dot-product space requires only $\BigO(\log N)$ dimensions. Value transfer, by contrast, must preserve the full informational content of the model's representations.
+
+We propose \textbf{asymmetric attention}, in which queries and keys project to a lower-dimensional space $\dselect \ll \dmodel$ while values retain the full model dimensionality:
+\begin{align}
+Q &= XW_Q, \quad W_Q \in \mathbb{R}^{\dmodel \times \dselect} \\
+K &= XW_K, \quad W_K \in \mathbb{R}^{\dmodel \times \dselect} \\
+V &= XW_V, \quad W_V \in \mathbb{R}^{\dmodel \times \dmodel}
+\end{align}
+The attention computation proceeds unchanged---$QK^\top / \sqrt{\dselect}$ produces scalar weights that are applied to $V$. No architectural modifications are required beyond changing projection dimensions.
+
+This simple modification yields three practical benefits:
+\begin{itemize}
+    \item \textbf{Parameter reduction}: $W_Q$ and $W_K$ shrink by a factor of $\dmodel / \dselect$, reducing attention parameters by up to 75\% when $\dselect = \dmodel/4$.
+    \item \textbf{KV cache reduction}: During autoregressive inference, the key cache stores $K \in \mathbb{R}^{n \times \dselect}$ instead of $\mathbb{R}^{n \times \dmodel}$, directly reducing the dominant memory bottleneck in long-context serving. For a 7B-parameter model at 128K context, this saves 25\,GB of KV cache per user, enabling $\sim$60\% more concurrent users on the same hardware.
+    \item \textbf{Attention compute reduction}: The $QK^\top$ product requires $\BigO(n^2 \cdot \dselect)$ operations instead of $\BigO(n^2 \cdot \dmodel)$.
+\end{itemize}
+
+We validate asymmetric attention through a progression of increasingly complex tasks, providing both theoretical motivation and empirical confirmation that selection operates in a lower-dimensional space than value transfer. Our contributions are:
+
+\begin{enumerate}
+    \item \textbf{A theoretical and empirical analysis showing that attention selection is inherently low-dimensional.} We demonstrate that queries and keys require only $\BigO(\log N)$ dimensions, validated across positional selection (1~dim/head), content-based retrieval ($\log_2 N$~dims), and language modeling ($\dmodel/4$ incurs only 4.3\% PPL cost), with consistent results across three architectures (vanilla transformer, LLaMA, and Mistral with GQA) and scales from 10M to 7B parameters.
+
+    \item \textbf{Asymmetric attention: a simple, drop-in modification} that decouples QK and V dimensionality. On WikiText-103, $\dselect = \dmodel/4$ reduces QK parameters by 75\% at 4.3\% perplexity cost. Post-training SVD of pretrained GPT-2 reveals keys to be far more compressible than queries, and lightweight QK fine-tuning (3 epochs on $<$1\% of pretraining data) recovers nearly all quality loss, reducing the residual gap to $<$2\%.
+
+    \item \textbf{Significant KV cache savings for LLM inference.} The key cache shrinks proportionally with $\dselect$, reducing total KV cache by 37.5\% when $\dselect = \dmodel/4$. We provide three deployment paths---training from scratch, SVD + QK fine-tuning, and zero-cost SVD---and show composability with KV cache quantization for up to 16$\times$ combined compression. For a 7B-parameter model at 128K context, this saves 25\,GB per user.
+\end{enumerate}
+
+
+% ============================================================
+% 2. METHOD
+% ============================================================
+\section{Method}
+
+\subsection{Asymmetric Attention}
+
+In multi-head attention with $h$ heads, standard transformers set $\dhead = \dmodel / h$ for all of $Q$, $K$, and $V$. We decouple this by introducing $d_{\text{select}}$, the total dimensionality for queries and keys:
+
+\begin{equation}
+d_{\text{head}}^{QK} = \frac{\dselect}{h}, \qquad d_{\text{head}}^{V} = \frac{\dmodel}{h}
+\end{equation}
+
+For each head $i$, the attention computation is:
+\begin{align}
+Q_i &= XW_Q^{(i)}, \quad W_Q^{(i)} \in \mathbb{R}^{\dmodel \times d_{\text{head}}^{QK}} \\
+K_i &= XW_K^{(i)}, \quad W_K^{(i)} \in \mathbb{R}^{\dmodel \times d_{\text{head}}^{QK}} \\
+V_i &= XW_V^{(i)}, \quad W_V^{(i)} \in \mathbb{R}^{\dmodel \times d_{\text{head}}^{V}} \\
+\text{head}_i &= \softmax\!\left(\frac{Q_i K_i^\top}{\sqrt{d_{\text{head}}^{QK}}}\right) V_i
+\end{align}
+
+Critically, no projection is needed between the attention weight computation and the value aggregation: the attention weights $\softmax(Q_i K_i^\top / \sqrt{d_{\text{head}}^{QK}}) \in \mathbb{R}^{n \times n}$ are scalars regardless of $d_{\text{head}}^{QK}$, and they multiply $V_i$ of any dimensionality.
+
+When $\dselect = \dmodel$, this reduces to standard multi-head attention. When $\dselect < \dmodel$, selection operates in a compressed space.
+
+\subsection{Theoretical Motivation}
+
+We argue that selection requires $\BigO(\log N)$ dimensions where $N$ is the number of distinct patterns the attention mechanism must distinguish among.
+
+\paragraph{Selection as a ranking problem.}
+The attention weight $\alpha_{ij} \propto \exp(q_i^\top k_j / \sqrt{d})$ assigns a scalar relevance score to each key $k_j$ given query $q_i$. For correct selection, the mechanism must ensure that relevant keys score higher than irrelevant ones. This is a \emph{ranking} problem in the dot-product space of $Q$ and $K$.
+
+\paragraph{Dimensionality for ranking.}
+By the Johnson--Lindenstrauss lemma, $N$ points in high-dimensional space can be embedded into $\BigO(\log N)$ dimensions while approximately preserving pairwise distances. For attention, this means $\BigO(\log N)$ dimensions suffice to maintain the relative ordering of dot-product similarities among $N$ candidate keys.
+
+\paragraph{What determines $N$?}
+In language modeling, $N$ is not the vocabulary size but the \emph{effective number of distinct selection patterns}---the number of meaningfully different categories the attention mechanism must distinguish for routing purposes. These include syntactic roles (subject, verb, object), semantic clusters (topic-related tokens), and recency patterns. Empirically, this effective $N$ appears to be in the hundreds to low thousands, much smaller than vocabulary size, suggesting $\dselect \approx 10$--$20$ dimensions per head should suffice.
+
+\paragraph{Value transfer requires full dimensionality.}
+Unlike selection, value transfer must preserve the complete representational content of tokens---their semantic identity, syntactic role, positional information, and contextual meaning. This information is distributed across all $\dmodel$ dimensions of the model's representations, and compressing $V$ would discard information that downstream layers require.
+
+
+\subsection{Post-Training Compression via Factored Keys}
+
+Asymmetric attention can also be \emph{retrofitted} to pretrained models via low-rank approximation of the key projection. Given a pretrained weight matrix $W_K \in \mathbb{R}^{\dmodel \times \dmodel}$, we compute its truncated SVD:
+\begin{equation}
+W_K \approx U_r \Sigma_r V_r^\top, \quad U_r \in \mathbb{R}^{\dmodel \times r}, \quad \Sigma_r \in \mathbb{R}^{r \times r}, \quad V_r \in \mathbb{R}^{\dmodel \times r}
+\end{equation}
+where $r = \dselect$ is the target rank. This yields two factors: $A = U_r \Sigma_r \in \mathbb{R}^{\dmodel \times r}$ and $B = V_r^\top \in \mathbb{R}^{r \times \dmodel}$, such that $W_K \approx AB$.
+
+The critical observation is that $A$ and $B$ can be \emph{separated} and assigned to different roles. In standard attention, the key for token $j$ is $k_j = x_j W_K \in \mathbb{R}^{\dmodel}$, producing a $\dmodel$-dimensional vector that must be cached. With the factored form:
+\begin{equation}
+k_j = x_j W_K \approx x_j A B = \underbrace{(x_j A)}_{\in \mathbb{R}^r} B
+\end{equation}
+
+We define $A$ as the \textbf{new key projection}: $W_K^{\text{new}} = A \in \mathbb{R}^{\dmodel \times r}$. This produces $r$-dimensional keys $k_j' = x_j A \in \mathbb{R}^r$---these are what we store in the cache, at a fraction of the original size.
+
+To preserve attention scores, $B$ is absorbed into the query projection. The original attention score between query position $i$ and key position $j$ is:
+\begin{align}
+q_i k_j^\top &= (x_i W_Q)(x_j W_K)^\top \approx (x_i W_Q)(x_j A B)^\top \notag \\
+              &= (x_i W_Q B^\top)(x_j A)^\top = q_i' \, k_j'^\top
+\end{align}
+where $q_i' = x_i W_Q B^\top \in \mathbb{R}^r$ and $k_j' = x_j A \in \mathbb{R}^r$. The new query projection is $W_Q^{\text{new}} = W_Q B^\top \in \mathbb{R}^{\dmodel \times r}$---a simple matrix multiplication applied once, adding no runtime cost since queries are computed fresh each step and never cached.
+
+The result is mathematically equivalent to training with $\dselect = r$ from the start: queries and keys are $r$-dimensional, values remain at $\dmodel$, and the key cache stores only $r$ dimensions per token. No retraining is required; the entire conversion is a one-time factorization of $W_K$ per layer.
+
+
+\subsection{KV Cache Implications}
+
+During autoregressive generation, models cache $K$ and $V$ for all previous tokens to avoid recomputation. For a model with $L$ layers serving context length $n$:
+
+\begin{align}
+\text{Standard KV cache} &= 2 \cdot n \cdot \dmodel \cdot L \cdot b \text{ bytes} \\
+\text{Asymmetric KV cache} &= n \cdot (\dselect + \dmodel) \cdot L \cdot b \text{ bytes}
+\end{align}
+
+where $b$ is the bytes per parameter (2 for fp16). With $\dselect = \dmodel / 4$, the K cache shrinks by 75\%, yielding a total KV cache reduction of 37.5\%. At scale---128K context, 32 layers, $\dmodel = 4096$, 100 concurrent users---this translates to approximately 2.5~TB of memory savings.
+
+
+% ============================================================
+% 3. EXPERIMENTS
+% ============================================================
+\section{Experiments}
+
+We validate asymmetric attention through seven experiments of increasing complexity: two controlled algorithmic tasks that isolate positional and content-based selection, two language modeling benchmarks at 10M-parameter scale, post-training SVD compression with fine-tuning recovery on GPT-2, a 125M-parameter LLaMA model confirming architecture generality, and SVD + fine-tuning at 7B scale on Mistral-7B.
+
+Experiments 1--4 use a standard transformer decoder with pre-norm layer normalization, GELU activations in the feed-forward network, and learned positional embeddings. Experiment 6 uses the LLaMA architecture (RMSNorm, SwiGLU, RoPE). In all cases, the only variable across configurations is $\dselect$.
+
+
+\subsection{Experiment 1: Positional Selection (Copy-Back Task)}
+
+\paragraph{Setup.}
+We design a task where each token must copy the token from $K=8$ positions earlier: $y_t = x_{t-K}$. The source position is fixed regardless of token content, isolating purely \emph{positional} selection. Sequences of length 64 are generated with random tokens from a vocabulary of 16. The model uses $\dmodel = 64$, 4 heads, 2 layers.
+
+\paragraph{Results.}
+Table~\ref{tab:copyback} shows that even $\dselect = 4$ (1 dimension per head) achieves 100\% accuracy, though convergence is slightly slower. This confirms that positional selection---learning to attend to a fixed offset---requires minimal dimensionality.
+
+\begin{table}[h]
+\centering
+\caption{Copy-back task: accuracy and convergence by $\dselect$.}
+\label{tab:copyback}
+\begin{tabular}{rrrr}
+\toprule
+$\dselect$ & $\dselect$/head & Best Accuracy & Converge Epoch \\
+\midrule
+4  & 1  & 100.0\% & 300 \\
+8  & 2  & 100.0\% & 200 \\
+16 & 4  & 100.0\% & 200 \\
+32 & 8  & 100.0\% & 200 \\
+64 & 16 & 100.0\% & 200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Experiment 2: Content-Based Selection (Key-Value Retrieval)}
+
+\paragraph{Setup.}
+We construct sequences of 8 random key-value pairs from a vocabulary of 16 tokens, followed by a query key. The model must output the value associated with the queried key. Positions are randomized each batch, so positional information is useless; the model must match content. Architecture: $\dmodel = 64$, 4 heads, 4 layers.
+
+\paragraph{Results.}
+Table~\ref{tab:kvretrieval} reveals a sharp transition between $\dselect = 4$ and $\dselect = 8$. With 1~dimension per head, keys map to scalars and cannot be reliably separated via dot product, achieving only 65.2\% accuracy. With 2~dimensions per head, keys can point in distinct angular directions, enabling perfect matching. The $\BigO(\log_2 N)$ prediction gives a lower bound: 16~keys require $\log_2(16) = 4$ dimensions total, but the model needs a small constant factor above this minimum to learn reliable separation via gradient descent. In practice, $\dselect \approx 2\log_2 N$ appears sufficient.
+
+\begin{table}[h]
+\centering
+\caption{Key-value retrieval: accuracy and convergence by $\dselect$.}
+\label{tab:kvretrieval}
+\begin{tabular}{rrrr}
+\toprule
+$\dselect$ & $\dselect$/head & Best Accuracy & Converge Epoch \\
+\midrule
+4  & 1  & 65.2\%  & did not converge \\
+8  & 2  & 100.0\% & 1900 \\
+16 & 4  & 100.0\% & 1900 \\
+32 & 8  & 100.0\% & 1400 \\
+64 & 16 & 100.0\% & 1000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Experiment 3: WikiText-2 Language Modeling}
+
+\paragraph{Setup.}
+We train causal language models on WikiText-2 \citep{merity2017pointer} (~2M training tokens) with $\dmodel = 256$, 8 heads, 6 layers, $d_{\text{ff}} = 1024$, sweeping $\dselect \in \{8, 16, 32, 64, 128, 256\}$. Word-level tokenization with vocabulary size $\sim$29K ($\text{min\_freq} = 2$). Training uses AdamW with cosine learning rate schedule for 30 epochs.
+
+\paragraph{Results.}
+Table~\ref{tab:wt2} shows that $\dselect = 64$ ($\dmodel/4$) achieves a test perplexity of 122.24, essentially identical to the baseline of 122.22. Even $\dselect = 32$ loses only 1.3\%. Notably, $\dselect = 128$ \emph{outperforms} the baseline (120.76 vs 122.22), likely because reducing QK capacity acts as a regularizer in this heavily overfitting regime (train PPL 37 vs validation PPL 127).
+
+\paragraph{Connecting to the $\BigO(\log N)$ prediction.}
+The vocabulary contains $\sim$29K words, yet $\dselect = 64$ (8 dimensions per head) suffices. This implies that the effective number of selection patterns $N$ is far smaller than the vocabulary size. Intuitively, attention does not need to distinguish every individual word from every other---it needs to distinguish \emph{categories} of tokens relevant to different attention patterns: syntactic roles (subject vs.\ object vs.\ modifier), semantic clusters (topic-related words), positional patterns (recent vs.\ distant tokens), and punctuation or structural cues. The number of such categories is in the hundreds, not the tens of thousands. With 8 heads each operating in 8 dimensions, the model can represent $\sim\!2^8 = 256$ distinguishable patterns per head, which appears to be sufficient for the selection demands of language modeling. This is consistent with the observation that attention heads tend to specialize into a modest number of interpretable roles (positional, syntactic, rare-word) rather than implementing vocabulary-sized lookup tables.
+
+\begin{table}[h]
+\centering
+\caption{WikiText-2 results. Model: $\dmodel = 256$, 8 heads, 6 layers. Baseline $\dselect = 256$.}
+\label{tab:wt2}
+\begin{tabular}{rrrrrrr}
+\toprule
+$\dselect$ & $\dselect$/head & Val PPL & Test PPL & $\Delta$PPL & QK Params & QK Saved \\
+\midrule
+8   & 1  & 133.78 & 126.48 & +3.5\%  & 24,672  & 97\% \\
+16  & 2  & 132.67 & 125.49 & +2.7\%  & 49,344  & 94\% \\
+32  & 4  & 130.51 & 123.78 & +1.3\%  & 98,688  & 87\% \\
+64  & 8  & 129.34 & 122.24 & +0.0\%  & 197,376 & 75\% \\
+128 & 16 & 126.42 & 120.76 & $-$1.2\% & 394,752 & 50\% \\
+256 & 32 & 126.95 & 122.22 & --- & 789,504 & 0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Experiment 4: WikiText-103 Language Modeling}
+
+\paragraph{Setup.}
+To eliminate overfitting as a confound, we repeat the experiment on WikiText-103 \citep{merity2017pointer} (~100M training tokens) with the same architecture. Word-level tokenization with $\text{min\_freq} = 200$ yields a vocabulary of $\sim$22K. We train for 10 epochs with batch size 64 and 2000 warmup steps.
+
+\paragraph{Results.}
+Table~\ref{tab:wt103} shows the clean comparison. With 50$\times$ more training data, the model is capacity-limited (train PPL $\approx$ val PPL), eliminating the regularization confound. Here $\dselect = 128$ ($\dmodel/2$) incurs only a 2.1\% perplexity increase with 50\% QK savings, and $\dselect = 64$ ($\dmodel/4$) incurs 4.3\% for 75\% savings---larger than on WikiText-2, confirming that the WikiText-2 result was partly masked by overfitting. Nevertheless, the tradeoffs remain compelling: the relationship between $\dselect$ and perplexity is smooth and monotonic, allowing practitioners to choose their operating point on a clear Pareto frontier.
+
+\begin{table}[h]
+\centering
+\caption{WikiText-103 results. Model: $\dmodel = 256$, 8 heads, 6 layers. Baseline $\dselect = 256$.}
+\label{tab:wt103}
+\begin{tabular}{rrrrrr}
+\toprule
+$\dselect$ & $\dselect$/head & Val PPL & Test PPL & $\Delta$PPL & QK Saved \\
+\midrule
+32  & 4  & 38.38 & ---   & +7.6\% & 87\% \\
+64  & 8  & 37.22 & ---   & +4.3\% & 75\% \\
+128 & 16 & 36.42 & 35.80 & +2.1\% & 50\% \\
+256 & 32 & 35.67 & ---   & ---    & 0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Experiment 5: Post-Training Compression of GPT-2}
+
+\paragraph{Setup.}
+We apply SVD compression to projections in pretrained GPT-2 (124M parameters, $\dmodel = 768$, 12 heads, 12 layers) without any retraining. Given a weight matrix $W \in \mathbb{R}^{\dmodel \times \dmodel}$, we compute its truncated SVD $W \approx A B$ where $A \in \mathbb{R}^{\dmodel \times r}$ and $B \in \mathbb{R}^{r \times \dmodel}$, reconstruct the approximation, and evaluate perplexity on WikiText-2. We test three modes: compressing both $W_Q$ and $W_K$, $K$-only, and $Q$-only.
+
+\paragraph{Results.}
+Table~\ref{tab:svd} reveals a striking asymmetry. Compressing both $W_Q$ and $W_K$ is catastrophic---at rank 192, errors in $Q$ and $K$ compound through the softmax, producing a cross-term $\Delta_Q \Delta_K^\top$ that destroys attention patterns. However, compressing $K$ alone is far more forgiving: rank 384 ($\dmodel/2$) incurs only 2.0\% degradation.
+
+\begin{table}[h]
+\centering
+\caption{SVD compression of GPT-2 projections. Baseline PPL: 24.91. $\Delta$ is relative PPL increase.}
+\label{tab:svd}
+\begin{tabular}{rrrrr}
+\toprule
+Rank $r$ & $r$/head & Both $Q{+}K$ & $K$-only & $Q$-only \\
+\midrule
+128 & 10 & 67,132 & 57.37 (+130\%) & 149.04 (+498\%) \\
+192 & 16 & 90.95 (+265\%) & 31.32 (+26\%) & 70.05 (+181\%) \\
+256 & 21 & 46.15 (+85\%) & 27.49 (+10\%) & 40.42 (+62\%) \\
+384 & 32 & --- & 25.40 (+2.0\%) & 27.58 (+11\%) \\
+512 & 42 & 25.69 (+3.1\%) & 25.23 (+1.3\%) & 25.47 (+2.2\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Notably, $K$ is substantially more compressible than $Q$ at every rank. At rank 192, $K$-only degrades by 26\% while $Q$-only degrades by 181\%. This suggests that keys encode relatively structured, low-rank token properties (``what I am''), while queries encode more complex contextual needs (``what I need'') that vary more across positions and layers.
+
+\paragraph{Deployment via factored keys.}
+The SVD factorization provides a direct path to KV cache reduction. Given $W_K \approx AB$ where $A \in \mathbb{R}^{\dmodel \times r}$ and $B \in \mathbb{R}^{r \times \dmodel}$, we can split the computation:
+
+\begin{align}
+K' &= X A \in \mathbb{R}^{n \times r}  & &\text{(store in cache --- small)} \\
+Q' &= X W_Q B^\top \in \mathbb{R}^{n \times r} & &\text{(compute at query time --- discarded)}
+\end{align}
+
+The attention scores are preserved exactly:
+\begin{equation}
+Q K^\top = (X W_Q)(X A B)^\top = (X W_Q B^\top)(X A)^\top = Q' K'^\top
+\end{equation}
+
+The key cache now stores $r$-dimensional vectors instead of $\dmodel$-dimensional ones, while $B^\top$ is absorbed into the query projection at no additional memory cost (since $Q$ is computed fresh each step and never cached). This means our $K$-only PPL measurements directly reflect deployment performance with actual cache savings:
+
+\begin{table}[h]
+\centering
+\caption{Practical KV cache savings from $K$-only SVD (no retraining).}
+\label{tab:kvcache_svd}
+\begin{tabular}{rrrr}
+\toprule
+Rank $r$ & K cache dim & KV cache saved & $\Delta$PPL \\
+\midrule
+384 ($\dmodel/2$) & 384 & 25\% & +2.0\% \\
+512 ($2\dmodel/3$) & 512 & 17\% & +1.3\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Interpretation.}
+Post-training SVD of $W_K$ alone provides a viable, retraining-free path to moderate KV cache savings. However, the achievable compression is limited: $K$-only SVD at $\dmodel/4$ (rank 192) degrades by 26\%, whereas training from scratch with $\dselect = \dmodel/4$ costs only 4.3\% on WikiText-103.
+
+\paragraph{Recovery via QK fine-tuning.}
+Can fine-tuning recover the SVD quality loss? We compress $W_K$ via SVD, then fine-tune \emph{only the QK projections} ($\sim$21M of 124M parameters) on WikiText-103 for 3 epochs over 10M tokens---a small fraction of GPT-2's original pretraining data. To isolate the effect of compression from general domain adaptation, we include a control: rank 768 (no compression) fine-tuned identically.
+
+\begin{table}[h]
+\centering
+\caption{SVD compression + QK fine-tuning on WikiText-103. The ``vs control'' column measures the residual gap relative to the uncompressed model after both receive identical fine-tuning.}
+\label{tab:svd_finetune}
+\begin{tabular}{rrrrrr}
+\toprule
+Rank $r$ & Before FT & After FT & Control & vs Control & K cache saved \\
+\midrule
+768 (none) & 29.51 & 19.07 & --- & baseline & 0\% \\
+384 ($\dmodel/2$) & 30.15 (+2.2\%) & 19.14 & 19.07 & +0.4\% & 50\% \\
+256 ($\dmodel/3$) & 32.61 (+10.5\%) & 19.28 & 19.07 & +1.1\% & 67\% \\
+192 ($\dmodel/4$) & 37.64 (+27.6\%) & 19.42 & 19.07 & +1.8\% & 75\% \\
+128 ($\dmodel/6$) & 67.26 (+128\%) & 19.77 & 19.07 & +3.7\% & 83\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results are striking: fine-tuning QK projections for 3 epochs nearly eliminates the SVD quality loss. At rank 192 ($\dmodel/4$), the gap shrinks from +27.6\% to just +1.8\% relative to the identically fine-tuned control. The SVD provides a good initialization---the top-$r$ singular vectors capture the most important selection directions---and the QK projections need only learn to route information through fewer dimensions while the rest of the model remains frozen. This establishes a third deployment path: \textbf{SVD compress + QK fine-tune}, achieving 75\% key cache savings at $<$2\% quality cost with minimal compute.
+
+
+\subsection{Experiment 6: Architecture Generalization (LLaMA 125M)}
+
+\paragraph{Motivation.}
+All training experiments so far use 10M-parameter vanilla transformers. A natural concern is whether asymmetric attention generalizes across architectures and scales. We validate on a faithful LLaMA implementation at 125M parameters---12.5$\times$ larger.
+
+\paragraph{Setup.}
+We implement a standard LLaMA architecture with RMSNorm, SwiGLU FFN, Rotary Position Embeddings (RoPE), no bias terms, pre-norm residuals, and tied embeddings \citep{touvron2023llama}. The \emph{only} modification: $W_Q$ and $W_K$ project to $\dselect$ dimensions; $W_V$ remains $\dmodel$. When $\dselect = \dmodel$, the model is exactly standard LLaMA. Configuration: $\dmodel = 768$, 12 heads, 12 layers, $d_{\text{ff}} = 2048$, $\sim$101.7M parameters at baseline. Training: WikiText-103 with vocabulary truncated to 22K tokens (min frequency 200), 5 epochs, batch size 64, sequence length 512, cosine schedule with 2000-step warmup.
+
+\begin{table}[h]
+\centering
+\caption{LLaMA 125M with asymmetric attention on WikiText-103. Comparison with 10M vanilla transformer from Experiment 4.}
+\label{tab:llama}
+\begin{tabular}{rrrrrr}
+\toprule
+$\dselect$ & $\dselect$/head & Params & Val PPL & $\Delta$PPL & QK saved \\
+\midrule
+768 (full) & 64 & 101.7M & 22.80 & --- & 0\% \\
+192 ($\dmodel/4$) & 16 & 91.1M & 23.77 & +4.3\% & 75\% \\
+96 ($\dmodel/8$) & 8 & 89.3M & 24.45 & +7.2\% & 87\% \\
+48 ($\dmodel/16$) & 4 & 88.4M & 25.30 & +11.0\% & 94\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.}
+The degradation ratios are remarkably consistent across architectures and scales:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+$\dselect$ & 10M Vanilla (Exp.~4) & 125M LLaMA (Exp.~6) \\
+\midrule
+$\dmodel/4$ & +4.3\% & +4.3\% \\
+$\dmodel/8$ & +7.6\% & +7.2\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The +4.3\% cost at $\dselect = \dmodel/4$ is identical across architectures despite a 12.5$\times$ scale difference and completely different design choices (LayerNorm vs RMSNorm, GELU vs SwiGLU, learned positions vs RoPE). At $\dmodel/8$, the degradation is also closely matched (+7.6\% vs +7.2\%). This strongly suggests the QK dimensionality requirement is a fundamental property of the attention mechanism, not an artifact of any particular architecture.
+
+
+\subsection{Experiment 7: SVD + Fine-tuning at Scale (Mistral 7B)}
+
+\paragraph{Motivation.}
+Experiments 5--6 demonstrate SVD compression and architecture generalization at up to 125M parameters. To confirm these findings hold at the scale of modern LLMs, we apply the SVD + QK fine-tuning pipeline to Mistral-7B (7.2B parameters), a widely used open-weight model with Grouped-Query Attention (32 query heads, 8 KV heads, $\dmodel = 4096$, 32 layers).
+
+\paragraph{Setup.}
+Mistral-7B uses GQA, so the key projection is $W_K \in \mathbb{R}^{4096 \times 1024}$ (8 KV heads $\times$ 128 dims per head), yielding a key dimensionality of 1024. We compress $W_K$ via SVD to ranks 512, 256, and 128, then fine-tune only the QK projections on WikiText-103 for 3 epochs over 10M tokens (batch size 1, gradient accumulation 8, sequence length 2048, learning rate 5e-5, bf16 precision). A control (rank 1024, no compression) is fine-tuned identically. All runs use a single NVIDIA H100 GPU.
+
+\begin{table}[h]
+\centering
+\caption{Mistral-7B: SVD compression + QK fine-tuning on WikiText-103. The ``vs control'' column measures the residual gap after identical fine-tuning.}
+\label{tab:mistral7b}
+\begin{tabular}{rrrrrr}
+\toprule
+Rank $r$ & Before FT & After FT & Control & vs Control & K cache saved \\
+\midrule
+1024 (none) & 6.69 & 5.91 & --- & baseline & 0\% \\
+512 ($k/2$) & 6.81 (+1.7\%) & 5.93 & 5.91 & +0.3\% & 50\% \\
+256 ($k/4$) & 7.84 (+17.1\%) & 6.03 & 5.91 & +2.0\% & 75\% \\
+128 ($k/8$) & 12.34 (+84.4\%) & 6.10 & 5.91 & +3.2\% & 88\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.}
+The SVD + QK fine-tuning pipeline scales to 7B parameters with consistent quality. At rank 256 (75\% K cache saved), the residual gap is just +2.0\% relative to the control---matching the GPT-2 result (Table~\ref{tab:svd_finetune}) almost exactly. At rank 512 (50\% K cache saved), the gap is a negligible +0.3\%. The before-FT degradation at rank 256 is larger for Mistral-7B (+17.1\%) than for GPT-2 (+10.4\% at the equivalent $\dmodel/3$ rank), reflecting the more complex learned representations of a 7B model, but fine-tuning recovers nearly all of the loss.
+
+These results confirm that the SVD + QK fine-tuning approach is practical at production scale: compressing key projections in a 7B model, then fine-tuning only the QK projections ($\sim$671M of 7.2B parameters, 9.3\%) for 3 epochs on 10M tokens, yields 75\% key cache savings at $\sim$2\% quality cost.
+
+
+% ============================================================
+% 4. ANALYSIS
+% ============================================================
+\section{Analysis}
+
+\subsection{Scaling of Minimum $\dselect$}
+
+Our experiments reveal a consistent pattern in the minimum $\dselect$ required for different selection tasks:
+
+\begin{table}[h]
+\centering
+\caption{Minimum effective $\dselect$ scales with task complexity.}
+\label{tab:scaling}
+\begin{tabular}{lrrl}
+\toprule
+Task & $N_{\text{effective}}$ & Min $\dselect$/head & Prediction ($\log_2 N$) \\
+\midrule
+Positional (copy-back) & $\sim$10 offsets & 1 & $\log_2 10 \approx 3$ \\
+Content (16 keys)      & 16 keys         & 2 & $\log_2 16 = 4$ (total) \\
+Language (WikiText)     & $\sim$256 patterns & 8 & $\log_2 256 = 8$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The empirical results are consistent with the $\BigO(\log N)$ prediction. For language modeling, the effective $N$ appears to be approximately 256, suggesting that attention selection operates over a few hundred distinct semantic/syntactic categories rather than the full vocabulary space. This aligns with recent findings that key vectors naturally lie in a significantly lower-dimensional space than the model dimension \citep{loki2024}.
+
+
+\subsection{Overfitting Masks the Effect}
+
+The WikiText-2 vs WikiText-103 comparison reveals an important methodological point: on small datasets, reducing $\dselect$ can \emph{appear} costless (or even beneficial) because the model is overfitting. The WikiText-2 baseline has a train/val PPL ratio of 3.4$\times$, indicating massive overfitting. Removing QK capacity acts as implicit regularization. On WikiText-103, where the model is underfitting (train PPL $>$ val PPL), the true cost of reduced $\dselect$ becomes visible.
+
+This suggests that results reported only on small benchmarks may overstate the losslessness of QK compression, and that large-scale experiments are essential.
+
+
+\subsection{Practical Benefit: KV Cache, Not Parameters}
+
+A potential criticism is that QK parameters represent a small fraction of total model parameters (3--12\% depending on architecture), so even a 75\% reduction yields modest overall savings. We argue that the primary practical benefit is \emph{inference-time KV cache reduction}, not parameter savings.
+
+During autoregressive generation, the KV cache grows linearly with context length and must be maintained per user. For a representative configuration ($\dmodel = 4096$, 32 layers, 128K context, fp16):
+
+\begin{table}[h]
+\centering
+\caption{KV cache memory per user ($\dmodel = 4096$, 32 layers, fp16). $\dselect = \dmodel/2$ is achievable via post-training $K$-only SVD; $\dselect = \dmodel/4$ via training from scratch or SVD + QK fine-tuning (Table~\ref{tab:svd_finetune}).}
+\label{tab:kvcache}
+\begin{tabular}{lrrr}
+\toprule
+ & Standard & $\dselect = \dmodel/2$ & $\dselect = \dmodel/4$ \\
+ & & (SVD, no retrain) & (train or SVD+FT) \\
+\midrule
+\multicolumn{4}{l}{\emph{128K context}} \\
+\quad K cache & 33.6 GB & 16.8 GB & 8.4 GB \\
+\quad V cache & 33.6 GB & 33.6 GB & 33.6 GB \\
+\quad \textbf{Total} & \textbf{67.2 GB} & \textbf{50.4 GB} & \textbf{42.0 GB} \\
+\quad Savings/user & --- & 16.8 GB (25\%) & 25.2 GB (37.5\%) \\
+\midrule
+\multicolumn{4}{l}{\emph{1M context}} \\
+\quad K cache & 262 GB & 131 GB & 66 GB \\
+\quad V cache & 262 GB & 262 GB & 262 GB \\
+\quad \textbf{Total} & \textbf{524 GB} & \textbf{393 GB} & \textbf{328 GB} \\
+\quad Savings/user & --- & 131 GB (25\%) & 196 GB (37.5\%) \\
+\midrule
+\multicolumn{4}{l}{\emph{100 users, 1M context}} \\
+\quad Total & 52.4 TB & 39.3 TB & 32.8 TB \\
+\quad Savings & --- & \textbf{13.1 TB} & \textbf{19.6 TB} \\
+\quad $\Delta$PPL & --- & $\sim$2\% & $\sim$2--4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These savings compound with the number of concurrent users and context length, making asymmetric attention directly relevant to the economics of LLM serving. Even the conservative SVD path---requiring no retraining---saves 131\,GB per user at 1M context, or \textbf{13.1\,TB across 100 users}. Training from scratch with $\dselect = \dmodel/4$ extends this to 19.6\,TB. At 1M context, a single user's standard KV cache (524\,GB) cannot fit on even 6 $\times$ 80\,GB GPUs; asymmetric attention reduces this to 4--5 GPUs.
+
+Recent work on dimensionality compression for KV cache, such as ZACK \citep{zack2025}, has demonstrated that zero-overhead compression and decompression is achievable while also reducing attention computation time. Similarly, LRQK \citep{lrqk2025} shows that joint low-rank decomposition of query and key matrices during the prefill stage can enable efficient long-context inference. These complementary approaches further validate the viability of our asymmetric design.
+
+
+% ============================================================
+% 5. RELATED WORK
+% ============================================================
+\section{Related Work}
+
+\paragraph{Multi-Query and Grouped-Query Attention.}
+Multi-Query Attention (MQA; \citealt{shazeer2019fast}) shares a single key-value head across all query heads, reducing KV cache by a factor of $h$. Grouped-Query Attention (GQA; \citealt{ainslie2023gqa}) interpolates between MQA and standard attention by grouping heads. More recently, \citet{costoptimalgqa2025} analyze the relationship among context length, model size, and GQA configuration, showing that commonly used GQA configurations are suboptimal for long-context scenarios and proposing cost-optimal configurations that reduce both memory usage and FLOPs by more than 50\% compared to Llama-3's GQA with no degradation in model capabilities. These methods reduce the \emph{number} of KV heads but maintain $d_k = \dhead$ within each head. Our approach is orthogonal: we reduce the \emph{dimensionality per head} for keys (and queries) while keeping the number of heads unchanged. The two approaches can be composed.
+
+\paragraph{Low-Rank Attention.}
+Linformer \citep{wang2020linformer} projects keys and values to a lower \emph{sequence} dimension: $[n, d] \to [k, d]$, approximating attention with fewer tokens. Our method reduces the \emph{feature} dimension: $[n, d] \to [n, \dselect]$, maintaining exact attention over all tokens. These approaches are orthogonal and address different bottlenecks. Low-Rank Adaptation (LoRA; \citealt{hu2022lora}) uses low-rank updates for fine-tuning but does not differentiate between QK and V dimensionality.
+
+Recent work has explored various forms of low-rank attention for efficient inference. \citet{loki2024} propose Loki, a sparse attention method that exploits the observation that key vectors lie in a significantly lower-dimensional space, ranking and selecting tokens based on attention scores computed in low-dimensional space. \citet{lrqk2025} introduce LRQK, a two-stage framework that jointly decomposes the full-precision query and key matrices into compact rank-r factors during the prefill stage, enabling efficient long-context inference. \citet{svdllm2025} present SVD-LLM, a truncation-aware SVD-based post-training compression method that incorporates data whitening and parameter update with sequential low-rank approximation to compensate for accuracy degradation.
+
+\paragraph{Efficient Attention.}
+Flash Attention \citep{dao2022flashattention} optimizes the memory access patterns of attention computation without changing its mathematical form. Subsequent work like FlashAttention-3 \citep{flashattention32024} further improves performance by leveraging hardware-specific features such as asynchrony and low-precision computation. Sparse attention methods \citep{child2019generating, kitaev2020reformer, beltagy2020longformer} reduce the set of key-value pairs attended to. \citet{saap2025} propose inference-time sparse attention with asymmetric partitions, using distinct partitions for keys and queries to approximate self-attention with a data-adaptive sparsity pattern. These approaches are complementary to our method, which reduces the dimensionality of the QK computation itself.
+
+\paragraph{KV Cache Compression.}
+A growing body of work focuses specifically on compressing the KV cache. \citet{kvquant2024} introduce KVQuant, which facilitates low-precision KV cache quantization through per-channel key quantization, Pre-RoPE key quantization, non-uniform datatypes, and per-vector dense-and-sparse quantization, enabling 3-bit quantization with <0.1 perplexity degradation. \citet{asymkv2024} propose AsymKV, which enables 1-bit quantization of the KV cache by implementing asymmetric configurations for key and value matrices, leveraging the observation that transformer output loss is more sensitive to key quantization. \citet{zack2025} present ZACK, the first KV dimensionality compression system that achieves zero-overhead compression and decompression while also reducing attention computation time. \citet{compressionbarriers2025} provide theoretical lower bounds on space utilization for attention-based token generation, showing that any algorithm must use $\Theta(nd)$ space where $d = \Omega(\log n)$, and that SubGen matches this bound for low-dimensional regimes.
+
+These works reveal complementary structural properties of the KV cache. While quantization methods find that keys are more sensitive to precision reduction \citep{kvquant2024, asymkv2024}, we find that keys are more compressible via low-rank approximation than queries (Table~\ref{tab:svd}). This suggests that dimensionality reduction and quantization target different axes of compressibility and can be combined multiplicatively.
+
+\paragraph{Compression and Pruning.}
+Weight pruning and knowledge distillation reduce model size globally. Our work identifies a specific, theoretically motivated target for compression: the key projections are functionally simpler and empirically more compressible than query or value projections. We show that training with asymmetric dimensions from scratch is most effective, but that $K$-only SVD followed by lightweight QK fine-tuning can recover most of the quality gap for existing models, paralleling findings that structured compression with targeted fine-tuning approaches the quality of training with constraints from scratch \citep{frankle2019lottery}.
+
+
+% ============================================================
+% 6. DISCUSSION
+% ============================================================
+\section{Discussion}
+
+\paragraph{Limitations.}
+Our training-from-scratch experiments use models up to 125M parameters, though SVD + fine-tuning is validated at 7B scale (Mistral-7B). The consistent $\sim$2\% residual gap at 75\% K cache reduction across GPT-2 (124M) and Mistral-7B (7.2B)---a 58$\times$ scale difference---provides strong evidence that the approach generalizes. However, training from scratch with asymmetric attention at 7B+ scale remains future work. Additionally, we evaluate only on perplexity; downstream task performance (in-context learning, instruction following, reasoning) may exhibit different sensitivity to QK dimensionality.
+
+\paragraph{Interaction with Flash Attention.}
+Most Flash Attention implementations assume $d_k = d_v$ for kernel fusion efficiency. Asymmetric attention breaks this assumption, potentially preventing the use of optimized CUDA kernels. This engineering consideration may offset some of the theoretical compute savings. Future work should develop Flash Attention kernels that support asymmetric dimensions, building on advances like FlashAttention-3 \citep{flashattention32024} which already demonstrate improved flexibility and performance.
+
+\paragraph{Composability with KV cache quantization.}
+Recent work on KV cache quantization \citep{liu2024kivi, hooper2024kvquant, zhang2024leankv, kvquant2024, asymkv2024} reduces the \emph{bits per element} in the cache, compressing keys and values from 16-bit to 4-bit or even 2-bit. Notably, these studies consistently find that keys are \emph{more sensitive} to quantization than values: KIVI requires per-channel quantization for keys versus simpler per-token quantization for values; KVQuant introduces Pre-RoPE key quantization to handle key-specific outliers; and LeanKV explicitly stores keys at higher precision than values, finding that keys have greater impact on attention computations. \citet{asymkv2024} further show that enabling 1-bit quantization of the KV cache is possible with layer-wise asymmetric configurations, leveraging the asymmetric structural roles of key and value matrices. This finding is particularly interesting in light of our own: we find that keys are \emph{more compressible} via low-rank approximation than queries (Table~\ref{tab:svd}). These observations are not contradictory---they reveal complementary structural properties of the key cache. Keys have strong low-rank structure (a few dominant directions capture most of the information), but the residual dimensions contain high-magnitude outliers in specific channels that are critical for quantization. In other words, keys are well-suited to \emph{dimensionality reduction} but poorly suited to \emph{precision reduction}---the dominant structure compresses well, but the tail requires full precision.
+
+This suggests that our approach---reducing the number of key dimensions rather than their precision---may be a more natural form of key cache compression, attacking exactly the axis where keys are most compressible while avoiding the axis where they are most fragile. Furthermore, the two methods are orthogonal and compose multiplicatively:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Method & K cache / token & Reduction \\
+\midrule
+Standard (FP16) & $\dmodel \times 2$ bytes & $1\times$ \\
+Quantization only (INT4) & $\dmodel \times 0.5$ bytes & $4\times$ \\
+Thin keys only ($\dselect = \dmodel/4$, FP16) & $\dselect \times 2$ bytes & $4\times$ \\
+Both (INT4 + thin keys) & $\dselect \times 0.5$ bytes & $16\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Thin keys first remove the low-rank redundancy, producing a compact representation with fewer outlier-prone dimensions; quantization then compresses the remaining elements more safely. This pipeline could enable substantially longer contexts or larger batch sizes than either method alone, and we believe studying their joint application is a promising direction for future work.
+
+\paragraph{Implications for architecture design.}
+The standard convention $d_q = d_k = d_v$ has persisted since the original transformer. Our results suggest it should be reconsidered. A simple design rule---set $\dselect = \dmodel / 4$ for the QK projections---yields consistent savings across architectures and scales with minimal quality impact. This aligns with theoretical lower bounds showing that $\Omega(\log n)$ dimensions are necessary and sufficient for attention-based token generation \citep{compressionbarriers2025}.
+
+\paragraph{Practical adoption path.}
+We identify three complementary deployment strategies, in order of increasing investment. For \emph{existing models with no compute budget}, $K$-only SVD at $\dmodel/2$ provides 25\% KV cache savings at 2\% PPL cost with zero retraining---a factored key representation where $B^\top$ is absorbed into the query projection. For \emph{existing models with modest compute}, SVD compression to $\dmodel/4$ followed by QK-only fine-tuning (3 epochs on a small fraction of pretraining data) achieves 75\% key cache savings at $\sim$2\% residual quality cost, validated on both GPT-2 and Mistral-7B (Tables~\ref{tab:svd_finetune} and~\ref{tab:mistral7b}). For \emph{future models}, setting $\dselect = \dmodel / 4$ at training time is the recommended approach, analogous to how Grouped-Query Attention \citep{ainslie2023gqa} was adopted: GQA was not retrofitted to GPT-3, but incorporated into LLaMA-2 and all subsequent architectures as a one-line configuration change, with recent work providing recipes for cost-optimal configurations \citep{costoptimalgqa2025}.
+
+
+% ============================================================
+% 7. CONCLUSION
+% ============================================================
+\section{Conclusion}
+
+We have shown that attention selection (QK) and value transfer (V) have fundamentally different dimensionality requirements. Selection operates in $\BigO(\log N)$ dimensions, while value transfer requires the full model dimensionality. This asymmetry, confirmed across algorithmic tasks, language modeling from 10M to 7B parameters, and three architectures (vanilla transformer, LLaMA, and Mistral with GQA), motivates \textbf{asymmetric attention}: a simple modification that reduces QK dimensionality while preserving V dimensionality.
+
+The practical benefit centers on KV cache reduction during inference---the dominant memory bottleneck in long-context LLM serving. SVD compression of key projections followed by lightweight QK fine-tuning achieves 75\% key cache savings at $\sim$2\% quality cost, validated on both GPT-2 (124M) and Mistral-7B (7.2B)---a 58$\times$ scale range. For production serving at 128K context, this frees 25\,GB per user, enabling $\sim$60\% more concurrent users on identical hardware.
+
+We provide three deployment paths: (1) training from scratch with thin keys for maximum benefit; (2) SVD compression of existing models followed by lightweight QK fine-tuning, which recovers nearly all quality loss (from +17\% to +2.0\% on Mistral-7B, from +28\% to +1.8\% on GPT-2) using a small fraction of original pretraining data; and (3) zero-cost SVD compression at half rank for immediate savings with no retraining. The approach is orthogonal to both GQA (reducing head count) and KV cache quantization (reducing bit width), enabling up to 16$\times$ combined key cache compression.
+
+
+% ============================================================
+% REFERENCES
+% ============================================================
+\begin{thebibliography}{20}
+
+\bibitem[Ainslie et~al.(2023)]{ainslie2023gqa}
+Ainslie, J., Lee-Thorp, J., de~Jong, M., Zemlyanskiy, Y., Lebr{\'o}n, F., and Sanghai, S.
+\newblock GQA: Training generalized multi-query transformer models from multi-head checkpoints.
+\newblock In \emph{EMNLP}, 2023.
+
+\bibitem[Beltagy et~al.(2020)]{beltagy2020longformer}
+Beltagy, I., Peters, M.~E., and Cohan, A.
+\newblock Longformer: The long-document transformer.
+\newblock \emph{arXiv preprint arXiv:2004.05150}, 2020.
+
+\bibitem[Chen et~al.(2025)]{costoptimalgqa2025}
+Chen, Y., Wu, Y., Song, C., Thai, Z.~L., Shen, X., Han, X., Liu, Z., and Sun, M.
+\newblock Cost-optimal grouped-query attention for long-context modeling.
+\newblock In \emph{EMNLP}, 2025.
+
+\bibitem[Child et~al.(2019)]{child2019generating}
+Child, R., Gray, S., Radford, A., and Sutskever, I.
+\newblock Generating long sequences with sparse transformers.
+\newblock \emph{arXiv preprint arXiv:1904.10509}, 2019.
+
+\bibitem[Dao et~al.(2022)]{dao2022flashattention}
+Dao, T., Fu, D.~Y., Ermon, S., Rudra, A., and R{\'e}, C.
+\newblock {FlashAttention}: Fast and memory-efficient exact attention with {IO}-awareness.
+\newblock In \emph{NeurIPS}, 2022.
+
+\bibitem[Devlin et~al.(2019)]{devlin2019bert}
+Devlin, J., Chang, M.-W., Lee, K., and Toutanova, K.
+\newblock {BERT}: Pre-training of deep bidirectional transformers for language understanding.
+\newblock In \emph{NAACL}, 2019.
+
+\bibitem[Frankle and Carlin(2019)]{frankle2019lottery}
+Frankle, J. and Carlin, M.
+\newblock The lottery ticket hypothesis: Finding sparse, trainable neural networks.
+\newblock In \emph{ICLR}, 2019.
+
+\bibitem[Hooper et~al.(2024)]{hooper2024kvquant}
+Hooper, C., Kim, S., Mohammadzadeh, H., Mahoney, M.~W., Shao, Y.~S., Keutzer, K., and Gholami, A.
+\newblock {KVQuant}: Towards 10 million context length {LLM} inference with {KV} cache quantization.
+\newblock In \emph{NeurIPS}, 2024.
+
+\bibitem[Hooper et~al.(2024)]{kvquant2024}
+Hooper, C., Kim, S., Mohammadzadeh, H., Mahoney, M.~W., Shao, Y.~S., Keutzer, K., and Gholami, A.
+\newblock {KVQuant}: Towards 10 million context length {LLM} inference with {KV} cache quantization.
+\newblock In \emph{NeurIPS}, 2024.
+
+\bibitem[Hu et~al.(2022)]{hu2022lora}
+Hu, E.~J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., and Chen, W.
+\newblock {LoRA}: Low-rank adaptation of large language models.
+\newblock In \emph{ICLR}, 2022.
+
+\bibitem[Johnson and Lindenstrauss(1984)]{johnson1984extensions}
+Johnson, W.~B. and Lindenstrauss, J.
+\newblock Extensions of {L}ipschitz mappings into a {H}ilbert space.
+\newblock \emph{Contemporary Mathematics}, 26:189--206, 1984.
+
+\bibitem[Kang et~al.(2024)]{loki2024}
+Kang, J., et~al.
+\newblock Loki: Low-rank keys for efficient sparse attention.
+\newblock \emph{arXiv preprint arXiv:2406.02542}, 2024.
+
+\bibitem[Kitaev et~al.(2020)]{kitaev2020reformer}
+Kitaev, N., Kaiser, {\L}., and Levskaya, A.
+\newblock Reformer: The efficient transformer.
+\newblock In \emph{ICLR}, 2020.
+
+\bibitem[Li et~al.(2025)]{lrqk2025}
+Li, T., Zhou, G., Zhao, X., Qiu, Y., and Zhao, Q.
+\newblock Efficient low rank attention for long-context inference in large language models.
+\newblock In \emph{NeurIPS}, 2025.
+
+\bibitem[Liu et~al.(2024)]{liu2024kivi}
+Liu, Z., Yuan, J., Jin, H., Zhong, S., Xu, Z., Braverman, V., Chen, B., and Hu, X.
+\newblock {KIVI}: A tuning-free asymmetric 2bit quantization for {KV} cache.
+\newblock In \emph{ICML}, 2024.
+
+\bibitem[Mazaré et~al.(2025)]{saap2025}
+Mazaré, P.-E., Szilvasy, G., Lomeli, M., Massa, F., Murray, N., Jégou, H., and Douze, M.
+\newblock Inference-time sparse attention with asymmetric indexing.
+\newblock \emph{arXiv preprint arXiv:2502.08246}, 2025.
+
+\bibitem[Merity et~al.(2017)]{merity2017pointer}
+Merity, S., Xiong, C., Bradbury, J., and Socher, R.
+\newblock Pointer sentinel mixture models.
+\newblock In \emph{ICLR}, 2017.
+
+\bibitem[Radford et~al.(2018)]{radford2018improving}
+Radford, A., Narasimhan, K., Salimans, T., and Sutskever, I.
+\newblock Improving language understanding by generative pre-training.
+\newblock 2018.
+
+\bibitem[Shah et~al.(2024)]{flashattention32024}
+Shah, J., et~al.
+\newblock {FlashAttention-3}: Fast and accurate attention with asynchrony and low-precision.
+\newblock \emph{arXiv preprint arXiv:2407.08608}, 2024.
+
+\bibitem[Shazeer(2019)]{shazeer2019fast}
+Shazeer, N.
+\newblock Fast transformer decoding: One write-head is all you need.
+\newblock \emph{arXiv preprint arXiv:1911.02150}, 2019.
+
+\bibitem[Tao et~al.(2024)]{asymkv2024}
+Tao, Q., et~al.
+\newblock {AsymKV}: Enabling 1-bit quantization of {KV} cache with layer-wise asymmetric quantization configurations.
+\newblock \emph{arXiv preprint arXiv:2410.13212}, 2024.
+
+\bibitem[Touvron et~al.(2023)]{touvron2023llama}
+Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M.-A., Lacroix, T., Rozi{\`e}re, B., Goyal, N., Hambro, E., Azhar, F., et~al.
+\newblock {LLaMA}: Open and efficient foundation language models.
+\newblock \emph{arXiv preprint arXiv:2302.13971}, 2023.
+
+\bibitem[Vaswani et~al.(2017)]{vaswani2017attention}
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.~N., Kaiser, {\L}., and Polosukhin, I.
+\newblock Attention is all you need.
+\newblock In \emph{NeurIPS}, 2017.
+
+\bibitem[Wang et~al.(2020)]{wang2020linformer}
+Wang, S., Li, B.~Z., Khabsa, M., Fang, H., and Ma, H.
+\newblock Linformer: Self-attention with linear complexity.
+\newblock \emph{arXiv preprint arXiv:2006.04768}, 2020.
+
+\bibitem[Wang et~al.(2024)]{svdllm2025}
+Wang, X., et~al.
+\newblock {SVD-LLM}: Truncation-aware singular value decomposition for large language model compression.
+\newblock In \emph{ICLR}, 2025.
+
+\bibitem[Zhang et~al.(2024)]{zhang2024leankv}
+Zhang, Y., Hu, Y., Zhao, R., Lui, J.~C.~S., and Chen, H.
+\newblock Unifying {KV} cache compression for large language models with {LeanKV}.
+\newblock \emph{arXiv preprint arXiv:2412.03131}, 2024.
+
+\bibitem[Zhang et~al.(2025)]{zack2025}
+Zhang, Z., et~al.
+\newblock {ZACK}: Zero-overhead {LLM} inference acceleration via dimensionality compression of the key-value cache.
+\newblock \emph{arXiv preprint arXiv:2408.04107}, 2025.
+
+\bibitem[Zhao et~al.(2025)]{compressionbarriers2025}
+Zhao, H., et~al.
+\newblock Compression barriers for autoregressive transformers.
+\newblock \emph{arXiv preprint arXiv:2502.12345}, 2025.
+
+\end{thebibliography}
+
+\end{document}
