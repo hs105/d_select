@@ -123,103 +123,112 @@ def factorize_model(model, rank):
                                 device=orig_device, dtype=orig_dtype)
         attn.q_proj.weight.data = W_Q_new.to(dtype=orig_dtype, device=orig_device)
 
-        # Store factored dimensions on the module
-        attn._thin_head_dim = r_per_head
-        attn._full_head_dim = d_head
-
         if layer_idx == 0 or layer_idx == n_layers - 1:
             print(f"    Layer {layer_idx}: k_proj [{rank}, {d_model}], "
                   f"q_proj [{q_out_dim}, {d_model}]")
 
-    # Now monkey-patch the forward for all attention layers
+    # Monkey-patch forward for all attention layers (thin QK, full V)
     _patch_attention_forward(model, r_per_head, d_head, n_q_heads, n_kv_heads)
     print(f"  Done. All attention layers patched for factored inference.")
 
 
-def _patch_attention_forward(model, thin_head_dim, full_head_dim, n_q_heads, n_kv_heads):
-    """Monkey-patch attention forward to use thin Q/K and full V."""
+def _make_attention_forward(attn_module, qk_head_dim, v_head_dim, n_q_heads,
+                            n_kv_heads):
+    """Create an attention forward fn for given QK/V head dims.
+
+    Used for BOTH baseline (qk_head_dim == v_head_dim == 128) and factored
+    (qk_head_dim < v_head_dim) so that the two configs traverse the exact
+    same Python / CUDA code-path and any throughput difference is attributable
+    solely to the dimension change.
+    """
     n_q_per_kv = n_q_heads // n_kv_heads
 
+    def forward(
+        hidden_states,
+        position_embeddings,
+        attention_mask=None,
+        past_key_values=None,
+        cache_position=None,
+        **kwargs,
+    ):
+        bsz, q_len, _ = hidden_states.size()
+
+        # Q projection  [bsz, q_len, n_q_heads * qk_head_dim]
+        query_states = attn_module.q_proj(hidden_states)
+        query_states = query_states.view(
+            bsz, q_len, n_q_heads, qk_head_dim).transpose(1, 2)
+
+        # K projection  [bsz, q_len, n_kv_heads * qk_head_dim]
+        key_states = attn_module.k_proj(hidden_states)
+        key_states = key_states.view(
+            bsz, q_len, n_kv_heads, qk_head_dim).transpose(1, 2)
+
+        # V projection  [bsz, q_len, n_kv_heads * v_head_dim]
+        value_states = attn_module.v_proj(hidden_states)
+        value_states = value_states.view(
+            bsz, q_len, n_kv_heads, v_head_dim).transpose(1, 2)
+
+        # RoPE — slice frequencies to match qk_head_dim
+        cos_full, sin_full = position_embeddings
+        if qk_head_dim == cos_full.shape[-1]:
+            # Full dims — no slicing needed
+            cos_qk, sin_qk = cos_full, sin_full
+        else:
+            half = qk_head_dim // 2
+            cos_qk = torch.cat(
+                [cos_full[..., :half], cos_full[..., :half]], dim=-1)
+            sin_qk = torch.cat(
+                [sin_full[..., :half], sin_full[..., :half]], dim=-1)
+
+        query_states, key_states = apply_rotary_pos_emb(
+            query_states, key_states, cos_qk, sin_qk)
+
+        # KV cache update
+        if past_key_values is not None:
+            cache_kwargs = {
+                "sin": sin_qk, "cos": cos_qk,
+                "cache_position": cache_position,
+            }
+            key_states, value_states = past_key_values.update(
+                key_states, value_states,
+                attn_module.layer_idx, cache_kwargs)
+
+        # GQA expansion
+        key_states = repeat_kv(key_states, n_q_per_kv)
+        value_states = repeat_kv(value_states, n_q_per_kv)
+
+        # Attention
+        is_causal = (attention_mask is None and q_len > 1)
+        attn_mask = None
+        if attention_mask is not None:
+            attn_mask = attention_mask[:, :, :, :key_states.shape[-2]]
+
+        attn_output = F.scaled_dot_product_attention(
+            query_states, key_states, value_states,
+            attn_mask=attn_mask,
+            is_causal=is_causal,
+            scale=1.0 / math.sqrt(qk_head_dim),
+        )
+        attn_output = attn_output.transpose(1, 2).contiguous()
+
+        # Reshape back to [bsz, q_len, n_q_heads * v_head_dim]
+        attn_output = attn_output.reshape(
+            bsz, q_len, n_q_heads * v_head_dim)
+
+        # Output projection (unchanged)
+        attn_output = attn_module.o_proj(attn_output)
+        return attn_output, None
+
+    return forward
+
+
+def _patch_attention_forward(model, qk_head_dim, v_head_dim, n_q_heads,
+                             n_kv_heads):
+    """Monkey-patch all attention layers to use the unified forward."""
     for layer in model.model.layers:
         attn = layer.self_attn
-
-        def make_forward(attn_module):
-            def factored_forward(
-                hidden_states,
-                position_embeddings,
-                attention_mask=None,
-                past_key_values=None,
-                cache_position=None,
-                **kwargs,
-            ):
-                bsz, q_len, _ = hidden_states.size()
-
-                # Q: thin dims [bsz, q_len, n_q_heads * thin_head_dim]
-                query_states = attn_module.q_proj(hidden_states)
-                query_states = query_states.view(
-                    bsz, q_len, n_q_heads, thin_head_dim).transpose(1, 2)
-
-                # K: thin dims [bsz, q_len, n_kv_heads * thin_head_dim]
-                key_states = attn_module.k_proj(hidden_states)
-                key_states = key_states.view(
-                    bsz, q_len, n_kv_heads, thin_head_dim).transpose(1, 2)
-
-                # V: full dims [bsz, q_len, n_kv_heads * full_head_dim]
-                value_states = attn_module.v_proj(hidden_states)
-                value_states = value_states.view(
-                    bsz, q_len, n_kv_heads, full_head_dim).transpose(1, 2)
-
-                # RoPE with thin dims
-                cos_full, sin_full = position_embeddings
-                # Correct slicing: take first thin_dim//2 freqs and tile
-                half = thin_head_dim // 2
-                cos_thin = torch.cat(
-                    [cos_full[..., :half], cos_full[..., :half]], dim=-1)
-                sin_thin = torch.cat(
-                    [sin_full[..., :half], sin_full[..., :half]], dim=-1)
-
-                query_states, key_states = apply_rotary_pos_emb(
-                    query_states, key_states, cos_thin, sin_thin)
-
-                # Cache thin keys + full values
-                if past_key_values is not None:
-                    cache_kwargs = {
-                        "sin": sin_thin, "cos": cos_thin,
-                        "cache_position": cache_position,
-                    }
-                    key_states, value_states = past_key_values.update(
-                        key_states, value_states,
-                        attn_module.layer_idx, cache_kwargs)
-
-                # GQA expansion
-                key_states = repeat_kv(key_states, n_q_per_kv)
-                value_states = repeat_kv(value_states, n_q_per_kv)
-
-                # SDPA: works with thin Q/K and full V (Ev != E is supported)
-                is_causal = (attention_mask is None and q_len > 1)
-                attn_mask = None
-                if attention_mask is not None:
-                    attn_mask = attention_mask[:, :, :, :key_states.shape[-2]]
-
-                attn_output = F.scaled_dot_product_attention(
-                    query_states, key_states, value_states,
-                    attn_mask=attn_mask,
-                    is_causal=is_causal,
-                    scale=1.0 / math.sqrt(thin_head_dim),
-                )
-                attn_output = attn_output.transpose(1, 2).contiguous()
-
-                # Reshape: [bsz, q_len, n_q_heads * full_head_dim]
-                attn_output = attn_output.reshape(
-                    bsz, q_len, n_q_heads * full_head_dim)
-
-                # Output projection (unchanged)
-                attn_output = attn_module.o_proj(attn_output)
-                return attn_output, None
-
-            return factored_forward
-
-        attn.forward = make_forward(attn)
+        attn.forward = _make_attention_forward(
+            attn, qk_head_dim, v_head_dim, n_q_heads, n_kv_heads)
 
 
 # ============================================================
@@ -378,20 +387,29 @@ def run_config(model_path, config_name, rank, device, tokenizer,
     print(f"{'='*70}")
 
     print(f"\nLoading model...", flush=True)
-    # Use SDPA for both baseline and factored.
-    # For factored, the patched forward uses F.scaled_dot_product_attention
-    # directly, which supports asymmetric K/V dims (Ev != E).
-    attn_impl = "sdpa" if rank is None else "eager"
+    # IMPORTANT: Both baseline and factored use "eager" loading + the same
+    # monkey-patched forward (via _make_attention_forward) so that the only
+    # variable is the QK dimension.  The old code used "sdpa" for baseline
+    # and "eager" for factored, which was an unfair comparison.
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,
-        attn_implementation=attn_impl,
+        attn_implementation="eager",
     ).to(device)
     model.eval()
+
+    config = model.config
+    n_q_heads = config.num_attention_heads          # 32
+    n_kv_heads = config.num_key_value_heads         # 8
+    d_head = config.hidden_size // n_q_heads        # 128
 
     if rank is not None:
         factorize_model(model, rank)
         torch.cuda.empty_cache()
+    else:
+        # Baseline: monkey-patch with full dims so code path is identical
+        _patch_attention_forward(model, d_head, d_head, n_q_heads, n_kv_heads)
+        print(f"  Baseline patched with same forward as factored (d_head={d_head}).")
 
     results = {}
 
@@ -507,7 +525,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     all_results = {}
 
-    # 1. Baseline (no factoring, eager attention for fair comparison)
+    # 1. Baseline (same monkey-patched forward, full dims — fair comparison)
     all_results['baseline'] = run_config(
         args.model_path, 'baseline (standard keys)', None, device,
         tokenizer, context_lengths, batch_sizes, args.n_decode_tokens)
