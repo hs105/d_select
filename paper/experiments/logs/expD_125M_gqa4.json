@@ -1,0 +1,28 @@
+{
+  "run_name": "expD_125M_gqa4",
+  "experiment": "D",
+  "method": "gqa",
+  "method_config": {
+    "n_kv_heads": 4
+  },
+  "model_size": "125M",
+  "d_model": 768,
+  "n_heads": 12,
+  "n_layers": 12,
+  "kv_cache_budget": 512,
+  "kv_cache_baseline": 1536,
+  "kv_cache_saving": "66.7%",
+  "total_params": 92275968,
+  "attn_params": 18874368,
+  "best_val_ppl": 22.77,
+  "best_epoch": 4,
+  "test_ppl": 23.32,
+  "test_loss": 3.1494,
+  "training": {
+    "epochs": 5,
+    "lr": 0.0003,
+    "batch_size": 32,
+    "seq_len": 512,
+    "seed": 42
+  }
+}

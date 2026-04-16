@@ -1,0 +1,28 @@
+{
+  "run_name": "expD_125M_mla512",
+  "experiment": "D",
+  "method": "mla",
+  "method_config": {
+    "d_compressed": 512
+  },
+  "model_size": "125M",
+  "d_model": 768,
+  "n_heads": 12,
+  "n_layers": 12,
+  "kv_cache_budget": 512,
+  "kv_cache_baseline": 1536,
+  "kv_cache_saving": "66.7%",
+  "total_params": 101713152,
+  "attn_params": 28311552,
+  "best_val_ppl": 22.6,
+  "best_epoch": 4,
+  "test_ppl": 23.23,
+  "test_loss": 3.1453,
+  "training": {
+    "epochs": 5,
+    "lr": 0.0003,
+    "batch_size": 32,
+    "seq_len": 512,
+    "seed": 42
+  }
+}

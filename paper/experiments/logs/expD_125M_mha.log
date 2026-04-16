@@ -1,0 +1,31 @@
+======================================================================
+Experiment D: expD_125M_mha
+======================================================================
+Method:    mha {}
+Model:     125M (d=768, heads=12, layers=12)
+KV cache:  1536 elem/tok/layer (baseline=1536, saving=0.0%)
+
+Loading data...
+  wiki.train.tokens: 101,425,671 words
+  wiki.valid.tokens: 213,886 words
+  wiki.test.tokens: 241,211 words
+  Using wikitext-103
+Vocabulary: 21,822 tokens (min_freq=200, 229,445 unique words)
+Train: 195396 seqs, Val: 412, Test: 464
+
+Parameters: 101.7M total, 28.3M attention
+
+Training (30535 steps, 5 epochs)...
+----------------------------------------------------------------------
+  Epoch 1/5: train_ppl=73.31 val_ppl=34.23 tok/s=52328 lr=0.000285 (1913s)
+  Epoch 2/5: train_ppl=30.43 val_ppl=27.05 tok/s=52346 lr=0.000215 (1913s)
+  Epoch 3/5: train_ppl=24.22 val_ppl=23.93 tok/s=52341 lr=0.000116 (1913s)
+  Epoch 4/5: train_ppl=20.05 val_ppl=22.46 tok/s=52360 lr=0.000033 (1912s)
+  Epoch 5/5: train_ppl=17.64 val_ppl=22.65 tok/s=52348 lr=0.000030 (1913s)
+----------------------------------------------------------------------
+Best val PPL: 22.46 (epoch 4)
+Test PPL: 23.07
+
+Results saved to /root/d_select/paper/experiments/logs/expD_125M_mha.json
+
+SUMMARY: mha        kv= 1536 params=101.7M val_ppl=22.46 test_ppl=23.07

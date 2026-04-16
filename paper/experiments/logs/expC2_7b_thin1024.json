@@ -1,0 +1,28 @@
+{
+  "experiment": "C2",
+  "mode": "thin_keys",
+  "best_owt_ppl": 9.23903596745181,
+  "best_owt_step": 305175,
+  "best_wt103_ppl": 12.943961265296304,
+  "final_owt_ppl": 9.23903596745181,
+  "final_wt103_ppl": 12.943961265296304,
+  "total_hours": 239.758703654276,
+  "total_tokens": 20000000000,
+  "total_epochs": 3,
+  "n_params": 5933109248,
+  "n_thin_params_saved": 805306368,
+  "config": {
+    "lr": 0.0003,
+    "seq_len": 1024,
+    "batch_size": 2,
+    "accum": 8,
+    "world_size": 4,
+    "eff_batch": 64
+  },
+  "thin_keys": {
+    "d_select": 1024,
+    "d_head_qk": 32,
+    "d_head_v": 128,
+    "n_heads": 32
+  }
+}

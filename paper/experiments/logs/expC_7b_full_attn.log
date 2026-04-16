@@ -1,0 +1,42 @@
+======================================================================
+EXPERIMENT C — FROM-SCRATCH 7B: FULL_ATTN
+======================================================================
+  GPUs: 2
+  Batch: 2/gpu × 8 accum × 2 gpus = 32
+  Tokens/step: 32,768  |  Total steps: 200
+  Tokens: 0.0B  |  Seq len: 1024
+  LR: 0.0003 → 2.9999999999999997e-05  |  Warmup: 2000
+  OWT Train: 1,855,468 seqs  |  OWT Val: 97,656 seqs
+  Loading WikiText-103 validation...
+  WikiText-103 Val: 283 seqs
+
+  Creating full_attn model...
+  FSDP ready | 6.74B params | thin params saved: 0
+  GPU memory after FSDP: 13.5 GB
+  step=    25  owt_ppl=21603.81  owt_loss=9.9806  wt103_ppl=35374.63  lr=3.7e-06  tok=0.00B  t=0.0h
+  ★ New best OWT PPL=21603.81 at step 25
+  step=    50  owt_ppl=3809.72  owt_loss=8.2453  wt103_ppl=6434.15  lr=7.5e-06  tok=0.00B  t=0.0h
+  ★ New best OWT PPL=3809.72 at step 50
+  step=    75  owt_ppl=1714.50  owt_loss=7.4469  wt103_ppl=2823.20  lr=1.1e-05  tok=0.00B  t=0.1h
+  ★ New best OWT PPL=1714.50 at step 75
+  step=   100  owt_ppl=1161.90  owt_loss=7.0578  wt103_ppl=1958.02  lr=1.5e-05  tok=0.00B  t=0.1h
+  ★ New best OWT PPL=1161.90 at step 100
+  step=   125  owt_ppl=918.28  owt_loss=6.8225  wt103_ppl=1649.33  lr=1.9e-05  tok=0.00B  t=0.1h
+  ★ New best OWT PPL=918.28 at step 125
+  step=   150  owt_ppl=763.42  owt_loss=6.6378  wt103_ppl=1555.71  lr=2.2e-05  tok=0.00B  t=0.1h
+  ★ New best OWT PPL=763.42 at step 150
+  step=   175  owt_ppl=645.89  owt_loss=6.4706  wt103_ppl=1431.17  lr=2.6e-05  tok=0.01B  t=0.2h
+  ★ New best OWT PPL=645.89 at step 175
+  step=   200  owt_ppl=549.01  owt_loss=6.3081  wt103_ppl=1259.07  lr=3.0e-05  tok=0.01B  t=0.2h
+  ★ New best OWT PPL=549.01 at step 200
+
+  Saving checkpoint to /sg-pretrain/checkpoints/expC_7b/expC_7b_full_attn.pt...
+  Saved (27.0 GB)
+
+======================================================================
+DONE: FULL_ATTN
+  Best OWT PPL: 549.01 at step 200
+  Final WT-103 PPL: 1259.07
+  Time: 0.2 hours
+  Tokens: 0.0B
+======================================================================

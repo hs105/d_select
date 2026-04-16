@@ -1,0 +1,210 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{vaswani2017attention}
+\citation{radford2018improving}
+\citation{touvron2023llama}
+\citation{jiang2023mistral}
+\citation{shazeer2019fast}
+\citation{ainslie2023gqa}
+\citation{touvron2023llama}
+\citation{liu2024deepseek}
+\citation{johnson1984extensions}
+\citation{compressionbarriers2025}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{mha2mla2025}
+\citation{lrqk2025,svdllm2025,loki2024}
+\citation{loki2024}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Method}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Asymmetric Attention}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Theoretical Motivation}{3}{subsection.2.2}\protected@file@percent }
+\newlabel{sec:theory}{{2.2}{3}{Theoretical Motivation}{subsection.2.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Factored Keys: An Inference Primitive for Pretrained Models}{3}{subsection.2.3}\protected@file@percent }
+\newlabel{eq:thin_key}{{6}{3}{Factored Keys: An Inference Primitive for Pretrained Models}{equation.2.6}{}}
+\newlabel{eq:absorbed_query}{{7}{3}{Factored Keys: An Inference Primitive for Pretrained Models}{equation.2.7}{}}
+\citation{ainslie2023gqa}
+\citation{liu2024deepseek}
+\citation{lrqk2025}
+\citation{svdllm2025}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}KV Cache Implications}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experiments}{4}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Experiment 5: Post-Training Compression of GPT-2}{4}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{4}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{5}{section*.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces SVD compression of GPT-2 projections. Baseline PPL: 24.91. $\Delta $ is relative PPL increase.\relax }}{5}{table.caption.3}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:svd}{{1}{5}{SVD compression of GPT-2 projections. Baseline PPL: 24.91. $\Delta $ is relative PPL increase.\relax }{table.caption.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Deployment via factored keys.}{5}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Recovery via QK fine-tuning.}{5}{section*.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces SVD compression + QK fine-tuning on WikiText-103. The ``vs control'' column measures the residual gap relative to the uncompressed model after both receive identical fine-tuning.\relax }}{5}{table.caption.6}\protected@file@percent }
+\newlabel{tab:svd_finetune}{{2}{5}{SVD compression + QK fine-tuning on WikiText-103. The ``vs control'' column measures the residual gap relative to the uncompressed model after both receive identical fine-tuning.\relax }{table.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Experiment 7: From-Scratch Training at 7B Scale}{5}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{5}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{5}{section*.9}\protected@file@percent }
+\citation{mha2mla2025}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces 7B LLaMA trained from scratch on OpenWebText (2B tokens), mean $\pm $ std over 2 seeds.\relax }}{6}{table.caption.8}\protected@file@percent }
+\newlabel{tab:7b_scratch}{{3}{6}{7B LLaMA trained from scratch on OpenWebText (2B tokens), mean $\pm $ std over 2 seeds.\relax }{table.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Training trajectory for 7B from-scratch models (seed 137). Left: OWT validation PPL. Right: WikiText-103 validation PPL. Thin keys lead throughout.\relax }}{6}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:7b_trajectory}{{1}{6}{Training trajectory for 7B from-scratch models (seed 137). Left: OWT validation PPL. Right: WikiText-103 validation PPL. Thin keys lead throughout.\relax }{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Experiment 7b: Extended Training at 7B Scale (20B Tokens)}{6}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:exp7b}{{3.3}{6}{Experiment 7b: Extended Training at 7B Scale (20B Tokens)}{subsection.3.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{6}{section*.11}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces 7B LLaMA on OpenWebText (20B tokens), mean $\pm $ std over 2 seeds. Both architectures converge to the same quality; thin keys train 8\% faster.\relax }}{6}{table.caption.12}\protected@file@percent }
+\newlabel{tab:7b_extended}{{4}{6}{7B LLaMA on OpenWebText (20B tokens), mean $\pm $ std over 2 seeds. Both architectures converge to the same quality; thin keys train 8\% faster.\relax }{table.caption.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Results.}{6}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Comparison with GQA and MLA at 7B scale.}{6}{section*.16}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Training trajectory for 7B models over 305K steps (20B tokens). \textbf  {Left:} PPL vs step; thin keys lead early but converge by $\sim $150K steps. \textbf  {Right:} PPL vs wall-clock time; thin keys reach any target PPL $\sim $20 hours sooner.\relax }}{7}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:7b_extended_trajectory}{{2}{7}{Training trajectory for 7B models over 305K steps (20B tokens). \textbf {Left:} PPL vs step; thin keys lead early but converge by $\sim $150K steps. \textbf {Right:} PPL vs wall-clock time; thin keys reach any target PPL $\sim $20 hours sooner.\relax }{figure.caption.14}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Downstream evaluation of 7B from-scratch models (20B tokens, seed 137). Scores are low in absolute terms (OWT-only training) but thin keys matches full attention on all tasks.\relax }}{7}{table.caption.15}\protected@file@percent }
+\newlabel{tab:c2_downstream}{{5}{7}{Downstream evaluation of 7B from-scratch models (20B tokens, seed 137). Scores are low in absolute terms (OWT-only training) but thin keys matches full attention on all tasks.\relax }{table.caption.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Experiment 8: SVD + Fine-tuning at Scale (Mistral 7B)}{7}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{7}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{7}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Downstream task evaluation.}{7}{section*.21}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Analytical KV cache comparison at LLaMA-7B scale (128K context, bf16). MLA stores a shared latent $d_c$ plus a decoupled RoPE key ($d_h^R$). Thin keys compose with GQA by reducing $d_{\text  {head}}^{QK}$ independently.\relax }}{8}{table.caption.17}\protected@file@percent }
+\newlabel{tab:kv_7b_analytical}{{6}{8}{Analytical KV cache comparison at LLaMA-7B scale (128K context, bf16). MLA stores a shared latent $d_c$ plus a decoupled RoPE key ($d_h^R$). Thin keys compose with GQA by reducing $d_{\text {head}}^{QK}$ independently.\relax }{table.caption.17}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Mistral-7B: SVD compression + QK fine-tuning on WikiText-103.\relax }}{8}{table.caption.19}\protected@file@percent }
+\newlabel{tab:mistral7b}{{7}{8}{Mistral-7B: SVD compression + QK fine-tuning on WikiText-103.\relax }{table.caption.19}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Downstream evaluation of SVD-compressed Mistral-7B. ``Ctrl+FT'' is the uncompressed model with identical fine-tuning.\relax }}{8}{table.caption.22}\protected@file@percent }
+\newlabel{tab:downstream}{{8}{8}{Downstream evaluation of SVD-compressed Mistral-7B. ``Ctrl+FT'' is the uncompressed model with identical fine-tuning.\relax }{table.caption.22}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Analysis}{8}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Practical Benefit: KV Cache}{8}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Math generalization of GSM8K-fine-tuned models on held-out benchmarks.\relax }}{9}{table.caption.23}\protected@file@percent }
+\newlabel{tab:math_generalization}{{9}{9}{Math generalization of GSM8K-fine-tuned models on held-out benchmarks.\relax }{table.caption.23}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces KV cache memory per user ($d_{\text  {model}}= 4096$, 32 layers, fp16).\relax }}{9}{table.caption.24}\protected@file@percent }
+\newlabel{tab:kvcache}{{10}{9}{KV cache memory per user ($\dmodel = 4096$, 32 layers, fp16).\relax }{table.caption.24}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Decode Throughput: Roofline Analysis}{9}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:decode_throughput}{{4.2}{9}{Decode Throughput: Roofline Analysis}{subsection.4.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Bandwidth model.}{9}{section*.25}\protected@file@percent }
+\newlabel{eq:roofline}{{10}{9}{Bandwidth model}{equation.4.10}{}}
+\@writefile{toc}{\contentsline {paragraph}{Mistral-7B numbers.}{9}{section*.26}\protected@file@percent }
+\citation{shazeer2019fast}
+\citation{ainslie2023gqa}
+\citation{liu2024deepseek}
+\citation{costoptimalgqa2025}
+\citation{wang2020linformer}
+\citation{loki2024}
+\citation{lrqk2025}
+\citation{svdllm2025}
+\citation{kvquant2024}
+\citation{asymkv2024}
+\citation{zack2025}
+\citation{compressionbarriers2025}
+\citation{dao2022flashattention,flashattention32024}
+\citation{child2019generating,beltagy2020longformer,saap2025}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Decode throughput for Mistral-7B with factored keys on H100 SXM (context 4096, 128 generated tokens). ``Predicted'' is the bandwidth roofline from Eq.\nobreakspace  {}\ref  {eq:roofline}.\relax }}{10}{table.caption.27}\protected@file@percent }
+\newlabel{tab:decode_throughput}{{11}{10}{Decode throughput for Mistral-7B with factored keys on H100 SXM (context 4096, 128 generated tokens). ``Predicted'' is the bandwidth roofline from Eq.~\ref {eq:roofline}.\relax }{table.caption.27}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Related Work}{10}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Multi-Query, Grouped-Query, and Multi-Latent Attention.}{10}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Low-Rank Attention and KV Cache Compression.}{10}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Efficient Attention.}{10}{section*.30}\protected@file@percent }
+\citation{gao2024rabitq,zandieh2025turboquant,liu2024kivi,zandieh2024qjl}
+\bibcite{ainslie2023gqa}{{1}{2023}{{Ainslie et~al.}}{{}}}
+\bibcite{beltagy2020longformer}{{2}{2020}{{Beltagy et~al.}}{{}}}
+\bibcite{costoptimalgqa2025}{{3}{2025}{{Chen et~al.}}{{}}}
+\bibcite{child2019generating}{{4}{2019}{{Child et~al.}}{{}}}
+\bibcite{dao2022flashattention}{{5}{2022}{{Dao et~al.}}{{}}}
+\bibcite{devlin2019bert}{{6}{2019}{{Devlin et~al.}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{11}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{11}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Composability with quantization.}{11}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Deployment paths.}{11}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{11}{section.7}\protected@file@percent }
+\bibcite{frankle2019lottery}{{7}{2019}{{Frankle and Carlin}}{{}}}
+\bibcite{hooper2024kvquant}{{8}{2024}{{Hooper et~al.}}{{}}}
+\bibcite{kvquant2024}{{9}{2024}{{Hooper et~al.}}{{}}}
+\bibcite{hu2022lora}{{10}{2022}{{Hu et~al.}}{{}}}
+\bibcite{jiang2023mistral}{{11}{2023}{{Jiang et~al.}}{{}}}
+\bibcite{johnson1984extensions}{{12}{1984}{{Johnson and Lindenstrauss}}{{}}}
+\bibcite{loki2024}{{13}{2024}{{Kang et~al.}}{{}}}
+\bibcite{kitaev2020reformer}{{14}{2020}{{Kitaev et~al.}}{{}}}
+\bibcite{lrqk2025}{{15}{2025}{{Li et~al.}}{{}}}
+\bibcite{liu2024kivi}{{16}{2024}{{Liu et~al.}}{{}}}
+\bibcite{liu2024deepseek}{{17}{2024}{{Liu et~al.}}{{}}}
+\bibcite{mha2mla2025}{{18}{2025}{{Ma et~al.}}{{}}}
+\bibcite{saap2025}{{19}{2025}{{Mazar{\'e} et~al.}}{{}}}
+\bibcite{merity2017pointer}{{20}{2017}{{Merity et~al.}}{{}}}
+\bibcite{radford2018improving}{{21}{2018}{{Radford et~al.}}{{}}}
+\bibcite{flashattention32024}{{22}{2024}{{Shah et~al.}}{{}}}
+\bibcite{shazeer2019fast}{{23}{2019}{{Shazeer}}{{}}}
+\bibcite{asymkv2024}{{24}{2024}{{Tao et~al.}}{{}}}
+\bibcite{touvron2023llama}{{25}{2023}{{Touvron et~al.}}{{}}}
+\bibcite{vaswani2017attention}{{26}{2017}{{Vaswani et~al.}}{{}}}
+\bibcite{wang2020linformer}{{27}{2020}{{Wang et~al.}}{{}}}
+\bibcite{svdllm2025}{{28}{2024}{{Wang et~al.}}{{}}}
+\bibcite{zhang2024leankv}{{29}{2024}{{Zhang et~al.}}{{}}}
+\bibcite{zack2025}{{30}{2025}{{Zhang et~al.}}{{}}}
+\bibcite{compressionbarriers2025}{{31}{2025}{{Haris and Onak}}{{}}}
+\bibcite{gao2024rabitq}{{32}{2024}{{Gao et~al.}}{{}}}
+\bibcite{zandieh2025turboquant}{{33}{2025}{{Zandieh et~al.}}{{}}}
+\bibcite{zandieh2024qjl}{{34}{2024}{{Zandieh et~al.}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Small-Scale Experiments}{13}{section.8}\protected@file@percent }
+\newlabel{app:small_scale}{{8}{13}{Small-Scale Experiments}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Experiment 1: Positional Selection (Copy-Back Task)}{13}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{13}{section*.35}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{13}{section*.36}\protected@file@percent }
+\citation{merity2017pointer}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Copy-back task: accuracy and convergence by $d_{\text  {select}}$.\relax }}{14}{table.caption.37}\protected@file@percent }
+\newlabel{tab:copyback}{{12}{14}{Copy-back task: accuracy and convergence by $\dselect $.\relax }{table.caption.37}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Experiment 2: Content-Based Selection (Key-Value Retrieval)}{14}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{14}{section*.38}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{14}{section*.39}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Key-value retrieval: accuracy and convergence by $d_{\text  {select}}$.\relax }}{14}{table.caption.40}\protected@file@percent }
+\newlabel{tab:kvretrieval}{{13}{14}{Key-value retrieval: accuracy and convergence by $\dselect $.\relax }{table.caption.40}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Experiment 3: WikiText-2 Language Modeling}{14}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{14}{section*.41}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{14}{section*.42}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Connecting to the $\mathcal  {O}(\qopname  \relax o{log}N)$ prediction.}{14}{section*.43}\protected@file@percent }
+\citation{merity2017pointer}
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces WikiText-2 results. Model: $d_{\text  {model}}= 256$, 8 heads, 6 layers. Baseline $d_{\text  {select}}= 256$.\relax }}{15}{table.caption.44}\protected@file@percent }
+\newlabel{tab:wt2}{{14}{15}{WikiText-2 results. Model: $\dmodel = 256$, 8 heads, 6 layers. Baseline $\dselect = 256$.\relax }{table.caption.44}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Experiment 4: WikiText-103 Language Modeling}{15}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{15}{section*.45}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Results.}{15}{section*.46}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces WikiText-103 results. Model: $d_{\text  {model}}= 256$, 8 heads, 6 layers. Baseline $d_{\text  {select}}= 256$.\relax }}{15}{table.caption.47}\protected@file@percent }
+\newlabel{tab:wt103}{{15}{15}{WikiText-103 results. Model: $\dmodel = 256$, 8 heads, 6 layers. Baseline $\dselect = 256$.\relax }{table.caption.47}{}}
+\citation{touvron2023llama}
+\citation{ainslie2023gqa}
+\citation{liu2024deepseek}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Architecture Generalization at 125M Scale}{16}{section.9}\protected@file@percent }
+\newlabel{app:arch_125m}{{9}{16}{Architecture Generalization at 125M Scale}{section.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Experiment 6: Architecture Generalization (LLaMA 125M)}{16}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Motivation.}{16}{section*.48}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{16}{section*.49}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces LLaMA 125M with asymmetric attention on WikiText-103. Comparison with 10M vanilla transformer from Experiment 4.\relax }}{16}{table.caption.50}\protected@file@percent }
+\newlabel{tab:llama}{{16}{16}{LLaMA 125M with asymmetric attention on WikiText-103. Comparison with 10M vanilla transformer from Experiment 4.\relax }{table.caption.50}{}}
+\@writefile{toc}{\contentsline {paragraph}{Results.}{16}{section*.51}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Comparison with alternative KV compression methods.}{16}{section*.52}\protected@file@percent }
+\citation{loki2024}
+\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces 125M LLaMA: comparison of KV compression methods trained from scratch on WikiText-103. KV budget = per-token, per-layer cache size (K + V dimensions stored).\relax }}{17}{table.caption.53}\protected@file@percent }
+\newlabel{tab:kv_methods}{{17}{17}{125M LLaMA: comparison of KV compression methods trained from scratch on WikiText-103. KV budget = per-token, per-layer cache size (K + V dimensions stored).\relax }{table.caption.53}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Additional Analysis}{17}{section.10}\protected@file@percent }
+\newlabel{app:analysis}{{10}{17}{Additional Analysis}{section.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Scaling of Minimum $d_{\text  {select}}$}{17}{subsection.10.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces Minimum effective $d_{\text  {select}}$ scales with task complexity.\relax }}{17}{table.caption.54}\protected@file@percent }
+\newlabel{tab:scaling}{{18}{17}{Minimum effective $\dselect $ scales with task complexity.\relax }{table.caption.54}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Overfitting Masks the Effect}{17}{subsection.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11}GSM8K Fine-tuning Progression}{17}{section.11}\protected@file@percent }
+\newlabel{app:gsm8k}{{11}{17}{GSM8K Fine-tuning Progression}{section.11}{}}
+\citation{flashattention32024}
+\@writefile{lot}{\contentsline {table}{\numberline {19}{\ignorespaces GSM8K exact-match accuracy across fine-tuning experiments. All models use the same QK-only fine-tuning protocol (3 epochs, lr=$5 \times 10^{-5}$). ``Control'' = uncompressed model with identical fine-tuning.\relax }}{18}{table.caption.55}\protected@file@percent }
+\newlabel{tab:gsm8k_progression}{{19}{18}{GSM8K exact-match accuracy across fine-tuning experiments. All models use the same QK-only fine-tuning protocol (3 epochs, lr=$5 \times 10^{-5}$). ``Control'' = uncompressed model with identical fine-tuning.\relax }{table.caption.55}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12}Prefill Roofline and Flash Attention}{18}{section.12}\protected@file@percent }
+\newlabel{app:throughput}{{12}{18}{Prefill Roofline and Flash Attention}{section.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Prefill roofline.}{18}{section*.56}\protected@file@percent }
+\gdef \@abspage@last{18}

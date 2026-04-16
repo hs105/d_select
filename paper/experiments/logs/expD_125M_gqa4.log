@@ -1,0 +1,31 @@
+======================================================================
+Experiment D: expD_125M_gqa4
+======================================================================
+Method:    gqa {'n_kv_heads': 4}
+Model:     125M (d=768, heads=12, layers=12)
+KV cache:  512 elem/tok/layer (baseline=1536, saving=66.7%)
+
+Loading data...
+  wiki.train.tokens: 101,425,671 words
+  wiki.valid.tokens: 213,886 words
+  wiki.test.tokens: 241,211 words
+  Using wikitext-103
+Vocabulary: 21,822 tokens (min_freq=200, 229,445 unique words)
+Train: 195396 seqs, Val: 412, Test: 464
+
+Parameters: 92.3M total, 18.9M attention
+
+Training (30535 steps, 5 epochs)...
+----------------------------------------------------------------------
+  Epoch 1/5: train_ppl=74.24 val_ppl=34.72 tok/s=56405 lr=0.000285 (1775s)
+  Epoch 2/5: train_ppl=30.82 val_ppl=27.48 tok/s=56424 lr=0.000215 (1775s)
+  Epoch 3/5: train_ppl=24.59 val_ppl=24.29 tok/s=56412 lr=0.000116 (1775s)
+  Epoch 4/5: train_ppl=20.42 val_ppl=22.77 tok/s=56401 lr=0.000033 (1775s)
+  Epoch 5/5: train_ppl=18.03 val_ppl=22.92 tok/s=56402 lr=0.000030 (1775s)
+----------------------------------------------------------------------
+Best val PPL: 22.77 (epoch 4)
+Test PPL: 23.32
+
+Results saved to /root/d_select/paper/experiments/logs/expD_125M_gqa4.json
+
+SUMMARY: gqa        kv=  512 params=92.3M val_ppl=22.77 test_ppl=23.32

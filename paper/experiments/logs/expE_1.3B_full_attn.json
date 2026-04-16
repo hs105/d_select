@@ -1,0 +1,31 @@
+{
+  "experiment": "E",
+  "scale": "1.3B",
+  "mode": "full_attn",
+  "seed": 42,
+  "best_owt_ppl": 10.402347261285367,
+  "best_owt_step": 99182,
+  "best_wt103_ppl": 14.58133920696305,
+  "final_owt_ppl": 10.402347261285367,
+  "final_wt103_ppl": 14.632773579141789,
+  "total_hours": 65.45726287417942,
+  "total_tokens": 26000000000,
+  "total_epochs": 3,
+  "n_params": 1279887360,
+  "n_thin_params_saved": 0,
+  "model_config": {
+    "hidden_size": 2048,
+    "num_heads": 16,
+    "num_layers": 24,
+    "intermediate_size": 5504,
+    "d_select": 2048
+  },
+  "training_config": {
+    "lr": 0.0002,
+    "seq_len": 1024,
+    "batch_size": 8,
+    "accum": 8,
+    "world_size": 4,
+    "eff_batch": 256
+  }
+}

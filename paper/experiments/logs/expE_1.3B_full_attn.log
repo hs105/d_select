@@ -1,0 +1,158 @@
+======================================================================
+EXPERIMENT E — SCALING LAWS: 1.3B FULL_ATTN
+======================================================================
+  Scale: 1.3B  |  d_model: 2048  |  heads: 16  |  layers: 24
+  GPUs: 4
+  Batch: 8/gpu x 8 accum x 4 gpus = 256
+  Tokens/step: 262,144  |  Total steps: 99,182
+  Tokens: 26.0B  |  Seq len: 1024
+  LR: 0.0002  |  Warmup: 2000
+  Seed: 42
+  Tokens/param ratio: ~26.0B / ~1.3B
+  Token file: /sg-pretrain/datasets/owt_tokens_full.bin (9.91B tokens)
+  Epochs needed: ~3
+  OWT Train: 9,196,965 seqs  |  OWT Val: 484,050 seqs
+  Loading WikiText-103 validation...
+  WikiText-103 Val: 283 seqs
+
+  Creating 1.3B full_attn model...
+  FSDP ready | 1279.9M params | thin saved: 0
+  GPU mem: 1.3 GB
+  step=  2000  owt_ppl=34.01  owt_loss=3.5268  wt103_ppl=56.21  lr=2.0e-04  tok=0.52B  ep=0  t=1.3h
+  * New best OWT PPL=34.01 at step 2000
+  step=  4000  owt_ppl=21.74  owt_loss=3.0792  wt103_ppl=32.52  lr=2.0e-04  tok=1.05B  ep=0  t=2.6h
+  * New best OWT PPL=21.74 at step 4000
+  step=  6000  owt_ppl=18.58  owt_loss=2.9220  wt103_ppl=27.22  lr=2.0e-04  tok=1.57B  ep=0  t=3.9h
+  * New best OWT PPL=18.58 at step 6000
+  step=  8000  owt_ppl=16.98  owt_loss=2.8320  wt103_ppl=24.84  lr=2.0e-04  tok=2.10B  ep=0  t=5.2h
+  * New best OWT PPL=16.98 at step 8000
+  step= 10000  owt_ppl=15.98  owt_loss=2.7712  wt103_ppl=22.90  lr=2.0e-04  tok=2.62B  ep=0  t=6.5h
+  * New best OWT PPL=15.98 at step 10000
+
+  Saving periodic checkpoint at step 10000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step10000.pt (5.4 GB)
+  step= 12000  owt_ppl=15.30  owt_loss=2.7276  wt103_ppl=21.95  lr=2.0e-04  tok=3.15B  ep=0  t=7.8h
+  * New best OWT PPL=15.30 at step 12000
+  step= 14000  owt_ppl=14.77  owt_loss=2.6924  wt103_ppl=21.19  lr=1.9e-04  tok=3.67B  ep=0  t=9.2h
+  * New best OWT PPL=14.77 at step 14000
+  step= 16000  owt_ppl=14.35  owt_loss=2.6634  wt103_ppl=20.38  lr=1.9e-04  tok=4.19B  ep=0  t=10.5h
+  * New best OWT PPL=14.35 at step 16000
+  step= 18000  owt_ppl=13.98  owt_loss=2.6373  wt103_ppl=19.77  lr=1.9e-04  tok=4.72B  ep=0  t=11.8h
+  * New best OWT PPL=13.98 at step 18000
+  step= 20000  owt_ppl=13.71  owt_loss=2.6178  wt103_ppl=19.25  lr=1.9e-04  tok=5.24B  ep=0  t=13.1h
+  * New best OWT PPL=13.71 at step 20000
+
+  Saving periodic checkpoint at step 20000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step20000.pt (5.4 GB)
+  step= 22000  owt_ppl=13.43  owt_loss=2.5977  wt103_ppl=18.90  lr=1.8e-04  tok=5.77B  ep=0  t=14.4h
+  * New best OWT PPL=13.43 at step 22000
+  step= 24000  owt_ppl=13.23  owt_loss=2.5823  wt103_ppl=18.62  lr=1.8e-04  tok=6.29B  ep=0  t=15.8h
+  * New best OWT PPL=13.23 at step 24000
+  step= 26000  owt_ppl=13.04  owt_loss=2.5677  wt103_ppl=18.14  lr=1.7e-04  tok=6.82B  ep=0  t=17.1h
+  * New best OWT PPL=13.04 at step 26000
+  step= 28000  owt_ppl=12.87  owt_loss=2.5549  wt103_ppl=18.24  lr=1.7e-04  tok=7.34B  ep=0  t=18.4h
+  * New best OWT PPL=12.87 at step 28000
+  step= 30000  owt_ppl=12.73  owt_loss=2.5438  wt103_ppl=18.04  lr=1.7e-04  tok=7.86B  ep=0  t=19.7h
+  * New best OWT PPL=12.73 at step 30000
+
+  Saving periodic checkpoint at step 30000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step30000.pt (5.4 GB)
+  step= 32000  owt_ppl=12.57  owt_loss=2.5315  wt103_ppl=18.10  lr=1.6e-04  tok=8.39B  ep=0  t=21.0h
+  * New best OWT PPL=12.57 at step 32000
+  step= 34000  owt_ppl=12.43  owt_loss=2.5204  wt103_ppl=17.89  lr=1.6e-04  tok=8.91B  ep=0  t=22.3h
+  * New best OWT PPL=12.43 at step 34000
+  step= 36000  owt_ppl=12.29  owt_loss=2.5084  wt103_ppl=17.45  lr=1.5e-04  tok=9.44B  ep=1  t=23.7h
+  * New best OWT PPL=12.29 at step 36000
+  step= 38000  owt_ppl=12.18  owt_loss=2.4996  wt103_ppl=17.25  lr=1.5e-04  tok=9.96B  ep=1  t=25.0h
+  * New best OWT PPL=12.18 at step 38000
+  step= 40000  owt_ppl=12.08  owt_loss=2.4916  wt103_ppl=17.03  lr=1.4e-04  tok=10.49B  ep=1  t=26.3h
+  * New best OWT PPL=12.08 at step 40000
+
+  Saving periodic checkpoint at step 40000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step40000.pt (5.4 GB)
+  step= 42000  owt_ppl=11.99  owt_loss=2.4837  wt103_ppl=16.94  lr=1.3e-04  tok=11.01B  ep=1  t=27.6h
+  * New best OWT PPL=11.99 at step 42000
+  step= 44000  owt_ppl=11.90  owt_loss=2.4765  wt103_ppl=16.87  lr=1.3e-04  tok=11.53B  ep=1  t=28.9h
+  * New best OWT PPL=11.90 at step 44000
+  step= 46000  owt_ppl=11.81  owt_loss=2.4692  wt103_ppl=16.34  lr=1.2e-04  tok=12.06B  ep=1  t=30.3h
+  * New best OWT PPL=11.81 at step 46000
+  step= 48000  owt_ppl=11.70  owt_loss=2.4593  wt103_ppl=16.27  lr=1.2e-04  tok=12.58B  ep=1  t=31.6h
+  * New best OWT PPL=11.70 at step 48000
+  step= 50000  owt_ppl=11.63  owt_loss=2.4537  wt103_ppl=15.88  lr=1.1e-04  tok=13.11B  ep=1  t=32.9h
+  * New best OWT PPL=11.63 at step 50000
+
+  Saving periodic checkpoint at step 50000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step50000.pt (5.4 GB)
+  step= 52000  owt_ppl=11.53  owt_loss=2.4450  wt103_ppl=15.92  lr=1.1e-04  tok=13.63B  ep=1  t=34.3h
+  * New best OWT PPL=11.53 at step 52000
+  step= 54000  owt_ppl=11.45  owt_loss=2.4384  wt103_ppl=15.75  lr=1.0e-04  tok=14.16B  ep=1  t=35.6h
+  * New best OWT PPL=11.45 at step 54000
+  step= 56000  owt_ppl=11.37  owt_loss=2.4314  wt103_ppl=15.63  lr=9.4e-05  tok=14.68B  ep=1  t=36.9h
+  * New best OWT PPL=11.37 at step 56000
+  step= 58000  owt_ppl=11.29  owt_loss=2.4242  wt103_ppl=15.62  lr=8.9e-05  tok=15.20B  ep=1  t=38.2h
+  * New best OWT PPL=11.29 at step 58000
+  step= 60000  owt_ppl=11.22  owt_loss=2.4173  wt103_ppl=15.68  lr=8.3e-05  tok=15.73B  ep=1  t=39.6h
+  * New best OWT PPL=11.22 at step 60000
+
+  Saving periodic checkpoint at step 60000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step60000.pt (5.4 GB)
+  step= 62000  owt_ppl=11.14  owt_loss=2.4102  wt103_ppl=15.33  lr=7.8e-05  tok=16.25B  ep=1  t=40.9h
+  * New best OWT PPL=11.14 at step 62000
+  step= 64000  owt_ppl=11.07  owt_loss=2.4042  wt103_ppl=15.49  lr=7.2e-05  tok=16.78B  ep=1  t=42.2h
+  * New best OWT PPL=11.07 at step 64000
+  step= 66000  owt_ppl=11.01  owt_loss=2.3986  wt103_ppl=15.64  lr=6.7e-05  tok=17.30B  ep=1  t=43.5h
+  * New best OWT PPL=11.01 at step 66000
+  step= 68000  owt_ppl=10.93  owt_loss=2.3918  wt103_ppl=15.12  lr=6.2e-05  tok=17.83B  ep=1  t=44.9h
+  * New best OWT PPL=10.93 at step 68000
+  step= 70000  owt_ppl=10.87  owt_loss=2.3856  wt103_ppl=15.05  lr=5.7e-05  tok=18.35B  ep=1  t=46.2h
+  * New best OWT PPL=10.87 at step 70000
+
+  Saving periodic checkpoint at step 70000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step70000.pt (5.4 GB)
+  step= 72000  owt_ppl=10.82  owt_loss=2.3817  wt103_ppl=15.00  lr=5.3e-05  tok=18.87B  ep=2  t=47.5h
+  * New best OWT PPL=10.82 at step 72000
+  step= 74000  owt_ppl=10.79  owt_loss=2.3785  wt103_ppl=14.62  lr=4.8e-05  tok=19.40B  ep=2  t=48.8h
+  * New best OWT PPL=10.79 at step 74000
+  step= 76000  owt_ppl=10.74  owt_loss=2.3737  wt103_ppl=14.78  lr=4.4e-05  tok=19.92B  ep=2  t=50.2h
+  * New best OWT PPL=10.74 at step 76000
+  step= 78000  owt_ppl=10.69  owt_loss=2.3695  wt103_ppl=14.73  lr=4.0e-05  tok=20.45B  ep=2  t=51.5h
+  * New best OWT PPL=10.69 at step 78000
+  step= 80000  owt_ppl=10.66  owt_loss=2.3663  wt103_ppl=15.07  lr=3.7e-05  tok=20.97B  ep=2  t=52.8h
+  * New best OWT PPL=10.66 at step 80000
+
+  Saving periodic checkpoint at step 80000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step80000.pt (5.4 GB)
+  step= 82000  owt_ppl=10.62  owt_loss=2.3629  wt103_ppl=14.91  lr=3.4e-05  tok=21.50B  ep=2  t=54.1h
+  * New best OWT PPL=10.62 at step 82000
+  step= 84000  owt_ppl=10.59  owt_loss=2.3598  wt103_ppl=14.93  lr=3.1e-05  tok=22.02B  ep=2  t=55.4h
+  * New best OWT PPL=10.59 at step 84000
+  step= 86000  owt_ppl=10.55  owt_loss=2.3561  wt103_ppl=14.81  lr=2.8e-05  tok=22.54B  ep=2  t=56.7h
+  * New best OWT PPL=10.55 at step 86000
+  step= 88000  owt_ppl=10.52  owt_loss=2.3533  wt103_ppl=14.74  lr=2.6e-05  tok=23.07B  ep=2  t=58.1h
+  * New best OWT PPL=10.52 at step 88000
+  step= 90000  owt_ppl=10.49  owt_loss=2.3502  wt103_ppl=14.84  lr=2.4e-05  tok=23.59B  ep=2  t=59.4h
+  * New best OWT PPL=10.49 at step 90000
+
+  Saving periodic checkpoint at step 90000...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step90000.pt (5.4 GB)
+  step= 92000  owt_ppl=10.47  owt_loss=2.3481  wt103_ppl=14.73  lr=2.2e-05  tok=24.12B  ep=2  t=60.7h
+  * New best OWT PPL=10.47 at step 92000
+  step= 94000  owt_ppl=10.44  owt_loss=2.3461  wt103_ppl=14.58  lr=2.1e-05  tok=24.64B  ep=2  t=62.0h
+  * New best OWT PPL=10.44 at step 94000
+  step= 96000  owt_ppl=10.43  owt_loss=2.3447  wt103_ppl=14.76  lr=2.0e-05  tok=25.17B  ep=2  t=63.3h
+  * New best OWT PPL=10.43 at step 96000
+  step= 98000  owt_ppl=10.41  owt_loss=2.3425  wt103_ppl=14.68  lr=2.0e-05  tok=25.69B  ep=2  t=64.7h
+  * New best OWT PPL=10.41 at step 98000
+  step= 99182  owt_ppl=10.40  owt_loss=2.3420  wt103_ppl=14.63  lr=2.0e-05  tok=26.00B  ep=2  t=65.5h
+  * New best OWT PPL=10.40 at step 99182
+
+  Saving final checkpoint at step 99182...
+  Saved /sg-pretrain/checkpoints/expE_scaling/1.3B_full_attn/expE_1.3B_full_attn_step99182.pt (5.4 GB)
+
+======================================================================
+DONE: 1.3B FULL_ATTN
+  Best OWT PPL: 10.40 at step 99182
+  Final WT-103 PPL: 14.63
+  Time: 65.5 hours
+  Tokens: 26.0B  |  Epochs: 3
+======================================================================
