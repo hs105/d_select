@@ -1,0 +1,214 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2761
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Arial-BoldMT;\f1\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;\red33\green44\blue57;\red245\green244\blue241;\red253\green171\blue173;
+\red78\green78\blue78;\red48\green84\blue98;\red38\green38\blue38;\red120\green15\blue16;}
+{\*\expandedcolortbl;;\cssrgb\c17255\c22745\c29020;\cssrgb\c96863\c96471\c95686;\cssrgb\c100000\c73333\c73333;
+\cssrgb\c38039\c38039\c38039;\cssrgb\c24314\c40392\c45882;\cssrgb\c20000\c20000\c20000;\cssrgb\c54902\c10588\c7451;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid1\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}
+{\list\listtemplateid5\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid401\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid5}
+{\list\listtemplateid6\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid501\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid6}
+{\list\listtemplateid7\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid601\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid7}
+{\list\listtemplateid8\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid701\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid8}
+{\list\listtemplateid9\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid801\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid9}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}{\listoverride\listid6\listoverridecount0\ls6}{\listoverride\listid7\listoverridecount0\ls7}{\listoverride\listid8\listoverridecount0\ls8}{\listoverride\listid9\listoverridecount0\ls9}}
+\margl1440\margr1440\vieww23040\viewh17400\viewkind0
+\deftab720
+\pard\pardeftab720\ri120\sa30\partightenfactor0
+
+\f0\b\fs48 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Useful low-rank key compression with elegant zero-cost absorption\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b0 \cf2 \cb4 Official Review\cf5 \cb3 \strokec5 by\'a0Reviewer KuvT09 May 2026, 03:22 (modified: 22 May 2026, 06:48)Program Chairs, Area Chairs, Reviewers Submitted, Authors, Reviewer KuvT{\field{\*\fldinst{HYPERLINK "https://openreview.net/revisions?id=7lNwPErhCT"}}{\fldrslt \cf6 \strokec6 Revisions}}\cf7 \cb1 \strokec7 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Summary:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\pardeftab720\sa120\partightenfactor0
+\cf7 \cb3 The paper identifies asymmetry in attention. They state that according to the Johnson-Lindenstrauss lemma, selecting\'a0\'a0can be done using\'a0\'a0dimensions. The authors propose to use truncated SVD to factorize\'a0\'a0and absort\'a0\'a0in query projection. They demonstrate with experiments the efficacy of their method.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Accept:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The core insight is clean and well-motivated. The Johnson-Lindenstrauss framing gives principled grounding to what could otherwise read as an empirical hack. The "free absorption" trick is elegant. Because queries are computed fresh each step and never cached, pushing the B factor into\'a0\'a0costs nothing at inference time while shrinking the cache.\cb1 \
+\ls1\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Three paths (zero-cost SVD at d/2, SVD+FT at d/4, train-from-scratch) with clear tradeoffs, plus measured H100 throughput showing 1.44x decode speedup at batch 32. The composability analysis with GQA (84.4% combined savings) and the comparison framing MLA's\'a0\'a0= 512 for 128 heads as "the thin-keys insight already embedded" is a thoughtful contextualization rather than a competitive claim.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Reject:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls2\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The theoretical motivation, while elegant, is loose. JL gives an existence result for random projections preserving distances but doesn't directly establish that learned QK projections concentrate in O(log N) dimensions, or that the "effective N" of language modeling is small.\cb1 \
+\ls2\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 GSM8K results are concerning and partially papered over. At rank 256, GSM8K drops 13.7% with WikiText-103 fine-tuning. The recovery via in-domain GSM8K fine-tuning (closing the gap to -1.2%) is reassuring but raises the question: does compression preferentially damage capabilities that require precise multi-step reasoning, in ways that only become visible on harder benchmarks?\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Rating:
+\f1\b0 \cf7 \strokec7 \'a06: Marginally above acceptance threshold\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Confidence:
+\f1\b0 \cf7 \strokec7 \'a04: The reviewer is confident but not absolutely certain that the evaluation is correct\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Ethics Flag:
+\f1\b0 \cf7 \strokec7 \'a0No\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 Add:\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf7 \strokec7 \
+\pard\pardeftab720\ri120\sa30\partightenfactor0
+
+\f0\b \cf2 \cb3 \strokec2 Review\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b0 \cf2 \cb4 Official Review\cf5 \cb3 \strokec5 by\'a0Reviewer GmAj09 May 2026, 02:53 (modified: 22 May 2026, 06:48)Program Chairs, Area Chairs, Reviewers Submitted, Authors, Reviewer GmAj{\field{\*\fldinst{HYPERLINK "https://openreview.net/revisions?id=Gpc9WzKBlB"}}{\fldrslt \cf6 \strokec6 Revisions}}\cf7 \cb1 \strokec7 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Summary:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\pardeftab720\sa120\partightenfactor0
+\cf7 \cb3 This paper presents a method for compressing the Key cache for efficient LLM attention. They aim to exploit the property of attention that the query/key comparison is just used to obtain scalar scores to rank the values, and distinguishing between these values requires only a logarithmic amount of dimensions. They use this to design a key cache compression strategy that projects the keys to a low-rank subspace (using an offline SVD + projection merging method to avoid inference overhead). There approach is composable with GQA + existing compression methods.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Accept:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls3\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 This paper provides in-depth analysis showing how the keys exhibit a distinct low-rank structure (which is not apparent in the values), and present a detailed theoretical argument as to why low-rank keys should be sufficient for ranking value vectors\cb1 \
+\ls3\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Their approach can be composed with quantization / GQA\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Reject:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls4\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The argument for their approach over GQA is weak - they state that they update the model using ~3 epochs on <1% of pretraining data; however, pooling + similar lightweight continued training can be used for adapting pretrained full-attention models to GQA.\cb1 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Their approach only reduces the size of the key cache, leaving the value cache uncompressed\cb1 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The comparison with MLA is not convincing - MLA-based models can attain greater savings, and they do not show convincing evidence their method outperforms MLA-based models with training.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Questions To Authors:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls5\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 How is RoPE supported with the argument that you can factor out part of the W_k weight matrix and fuse it with W_q?\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Rating:
+\f1\b0 \cf7 \strokec7 \'a05: Marginally below acceptance threshold\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Confidence:
+\f1\b0 \cf7 \strokec7 \'a04: The reviewer is confident but not absolutely certain that the evaluation is correct\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Ethics Flag:
+\f1\b0 \cf7 \strokec7 \'a0No\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 Add:\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf7 \strokec7 \
+\pard\pardeftab720\ri120\sa30\partightenfactor0
+
+\f0\b \cf2 \cb3 \strokec2 Thin Keys need stronger long-context evaluation and clearer positioning against MLA\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b0 \cf2 \cb4 Official Review\cf5 \cb3 \strokec5 by\'a0Reviewer 5qN309 May 2026, 00:48 (modified: 22 May 2026, 06:48)Program Chairs, Area Chairs, Reviewers Submitted, Authors, Reviewer 5qN3{\field{\*\fldinst{HYPERLINK "https://openreview.net/revisions?id=TnIywE3qCH"}}{\fldrslt \cf6 \strokec6 Revisions}}\cf7 \cb1 \strokec7 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Summary:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\pardeftab720\sa120\partightenfactor0
+\cf7 \cb3 The core idea of this paper is that, in Transformer attention, Query-Key mainly serves to \'93select\'94 relevant tokens, while Value is responsible for \'93transferring\'94 full representations. Therefore, the dimensionality of Key/Query does not necessarily need to be the same as that of Value. The experiments cover small-scale algorithmic tasks, post-training compression of GPT-2, training from scratch at the 7B scale, and SVD+QK fine-tuning of Mistral-7B. The results show that when (d_select = d_model/4), the method can achieve approximately 75% Key cache savings and around 37.5% overall KV cache savings. For existing models, substantial Key cache compression can be achieved with only a small amount of QK fine-tuning, at a quality degradation of about 2%.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Accept:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls6\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The method is simple and transferable. It can be applied by performing truncated SVD on the existing (W_K), without requiring retraining from scratch.\cb1 \
+\ls6\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The experiments are relatively comprehensive, covering different models and tasks.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Reject:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa30\partightenfactor0
+\ls7\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The experimental design of this paper is flawed. The KV cache memory bottleneck, as well as the main motivation of the paper, targets long-context inference scenarios. However, the experiments include relatively few evaluations that directly assess long-context capabilities. The paper mainly reports conventional tasks such as PPL, HellaSwag, ARC, WinoGrande, MMLU, and GSM8K. Therefore, the experiments do not truly substantiate the paper\'92s main claim.\cb1 \
+\ls7\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 A natural baseline for this work is Multi-head Latent Attention. The authors do include a comparison in Table 16, but this comparison is insufficient, as it lacks complete empirical measurements under the same training setup and the same inference system.\cb1 \
+\ls7\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The paper repeatedly uses terms such as \'93syntactic roles,\'94 \'93semantic clusters,\'94 and \'93positional patterns,\'94 but does not provide precise definitions for these concepts.\cb1 \
+\ls7\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	4	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 In fact, using different key/value dimensionalities is already a common design choice in some existing models, especially those based on MLA architectures. For example, DeepSeek-V3 uses different key and value dimensionalities. This raises concerns about the novelty of the paper\'92s findings.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Rating:
+\f1\b0 \cf7 \strokec7 \'a04: Ok but not good enough - rejection\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Confidence:
+\f1\b0 \cf7 \strokec7 \'a05: The reviewer is absolutely certain that the evaluation is correct and very familiar with the relevant literature\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Ethics Flag:
+\f1\b0 \cf7 \strokec7 \'a0No\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 Add:\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf7 \strokec7 \
+\pard\pardeftab720\ri120\sa30\partightenfactor0
+
+\f0\b \cf2 \cb3 \strokec2 Strong reject\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b0 \cf2 \cb4 Official Review\cf5 \cb3 \strokec5 by\'a0Reviewer S4Dn08 May 2026, 13:42 (modified: 22 May 2026, 06:48)Program Chairs, Area Chairs, Reviewers Submitted, Authors, Reviewer S4Dn{\field{\*\fldinst{HYPERLINK "https://openreview.net/revisions?id=Uf5tYzQB7n"}}{\fldrslt \cf6 \strokec6 Revisions}}\cf7 \cb1 \strokec7 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Summary:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\pardeftab720\sa120\partightenfactor0
+\cf7 \cb3 This paper is flawed on theory, experiments and presentation. The theoretical motivation lacks rigor and it is not clear why the invoked lemma relates deeply to the problem. The proposed method is inherently limited as the maximal achievable KV cache compression rate is 50%, the value vectors being left uncompressed. The authors do not conduct clear baseline comparisons on language modeling performance against directly relevant baselines, and they do not test their method on long-context evaluation, i.e. where the memory benefits are expected to matter. It seems to me that there is no technical setup where this method would be relevant.\cb1 \
+\cb3 A positive aspect of the paper consists in showing that performing SVD on key representations is not very harmful for model performance.\cb1 \
+\cb3 Finally, the presentation is rather poor, as agentic / LLM style is recognizable through most of the sentences, clear information is missing from the paragraphs and the accumulation of tables makes the results hard to parse.\cb1 \
+\cb3 I recommend resubmitting the paper to another venue with major revisions.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Accept:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls8\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Reducing the KV cache footprint on memory is an important research question in Transformers-based LLMs.\cb1 \
+\ls8\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The observation that performing a SVD of key projection on a trained model does not signifcantly affect performance is insightful about the structure of query and key vectors.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Reasons To Reject:
+\f1\b0 \cf7 \cb1 \strokec7 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls9\ilvl0\cf7 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 From the start, the method presented in this paper is inherently limited by the fact that its maximal potential for total KV cache memory reduction is a\'a02 compression level. Most KV cache compression methods (eviction methods such H2O, SnapKV, KeyDiff which would be important to cite, quantization methods, ...) aim for a wider range of compression ratios, and often report successful x4-x32 compression rates with negligible performance drops similar to what is reported in the paper.\cb1 \
+\ls9\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 The theoretical motivation is not convincing. Even though the connection to the Johnson\'96Lindenstrauss lemma seems relevant at first glance, the authors never validate the relevance of the log(N) observation on the key cache compression method. Quite the opposite, in Table 7, it appears that\'a0\'a0leads to poor performance, while\'a0. The Johnson\'96Lindenstrauss lemma uses an\'a0\'a0formulation for distance preservation, which is not discussed in the paper. The Johnson\'96Lindenstrauss lemma also only motivates for a projection to a smaller space, but it does not justify the use of SVD.\cb1 \
+\ls9\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Two crucial kinds of experiments are missing. First, there is no evaluation of the method on long context scenarii (e.g. RULER, LongBench, or just long-context PPL), where memory-related interventions may have more impact on the performance. This kind of evaluation is absolutely necessary when evaluating KV cache compression methods. Second, there is no comparison to baselines in terms of performance, whether in the case of direct use on a trained model (e.g. KV cache eviction methods) or for pretraining (GQA or MLA). In both cases, it appears to me that it it is not clear that the proposed method would beat its counterparts in terms of performance and/or achievable compression ratios.\cb1 \
+\ls9\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Many experimental choices are outdated: using OpenWebText is not relevant in 2026. Most recent papers use FineWeb / FineWeb-Edu / DCLM / Nemotron-CC as pre-training data, which would potentially allow non-random performance on MMLU and GSM8k.\cb1 \
+\ls9\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 This paper is poorly written and presentation could be significantly improved. Most sentences share the same "affirmation :/-- argument" pattern, which is characteristic of LLMs -- the paper contains 51 em-dashes. This is not only an issue of style or LLM usage, but it simply makes the paper redundant and hard to read. The experimental results are reported in hard-to-parse tables. It is never mentioned explicitly in the Experiment section paragraphs that the metric in most tables is perplexity, and it is sometimes not clear on what the perplexity is measured (table 1).\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf8 \cb3 \strokec8 Rating:
+\f1\b0 \cf7 \strokec7 \'a03: Clear rejection\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Confidence:
+\f1\b0 \cf7 \strokec7 \'a05: The reviewer is absolutely certain that the evaluation is correct and very familiar with the relevant literature\cb1 \
+
+\f0\b \cf8 \cb3 \strokec8 Ethics Flag:
+\f1\b0 \cf7 \strokec7 \'a0No\cb1 \
+}

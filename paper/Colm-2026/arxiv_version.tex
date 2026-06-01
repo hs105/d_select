@@ -1,9 +1,10 @@
-\documentclass{article} % For LaTeX2e
-\usepackage[submission]{colm2026_conference}
+\documentclass[11pt]{article}
 
-% Additional packages (from your original preamble, without conflicts)
+% Standard packages
+\usepackage[margin=1in]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -13,11 +14,10 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{multirow}
-\usepackage[pass]{geometry}   % do not override COLM's page layout
-\usepackage{microtype}        % recommended by COLM template
+\usepackage{microtype}
+\usepackage{natbib}
 \usepackage{hyperref}
 \usepackage{url}
-% pgfplots removed; figure pre-compiled to fig_trajectory.pdf for arxiv compatibility
 
 % Hyperref setup
 \hypersetup{
@@ -39,20 +39,15 @@
 \title{Thin Keys, Full Values: \\
 Reducing KV Cache via Low-Dimensional Attention Selection}
 
-% Authors (formatted according to COML template)
+% Authors
 \author{%
   Hengshuai Yao\textsuperscript{1,2} \quad Xing Chen\textsuperscript{1} \quad Ahmed Murtadha\textsuperscript{1} \quad Guan Wang\textsuperscript{1} \\
   \textsuperscript{1}Sapient Intelligence \\
   \textsuperscript{2}Department of Computing Science, University of Alberta \\
-  \texttt{hengshu1@ualberta.ca, raincchio@gmail.com,} \\
-  \texttt{murtadha20@gmail.com, imonenext@gmail.com}%
+  \texttt{hengshu1@ualberta.ca, raincchio@gmail.com, murtadha20@gmail.com, imonenext@gmail.com}%
 }
 
 \begin{document}
-
-\ifcolmsubmission
-\linenumbers
-\fi
 
 \maketitle
 
@@ -77,7 +72,7 @@ We propose \textbf{asymmetric attention}, where queries and keys project to $\ds
 
 A central contribution of this work is that asymmetric attention can be applied to \emph{any existing pretrained model} without retraining from scratch---in contrast to GQA and MLA, which must be built into the architecture before pretraining or require expensive conversion \citep{mha2mla2025}. We introduce \textbf{factored keys}, an inference primitive that physically shrinks the key cache of already-deployed models: factorize each layer's $W_K \approx A_{d \times r} B_{r \times d}$ via truncated SVD, use $A$ as the new key projection producing compact $r$-dimensional cached keys, and absorb $B^\top$ into the query projection at zero memory cost---exploiting the fundamental asymmetry that keys accumulate in memory while queries are ephemeral. With optional lightweight QK fine-tuning (3 epochs on $<$1\% of pretraining data), this recovers nearly all quality. This is related to recent work on low-rank KV cache compression \citep{lrqk2025, svdllm2025, loki2024}, but differs in a key respect: we compress \emph{only} keys and absorb the cost into queries, which are never cached. A striking finding is that keys are far more compressible than queries: at rank 192 on GPT-2, $K$-only SVD degrades by 26\% while $Q$-only degrades by 181\%---a 7$\times$ asymmetry consistent with recent observations that key vectors lie in a significantly lower-dimensional space \citep{loki2024}.
 
-We validate across nine experiments from algorithmic tasks to 7B-scale training (Experiments~1--4 and 6 appear in Appendix~\ref{app:small_scale}--\ref{app:arch_125m}; the four largest-scale experiments are in the main text). Controlled experiments confirm that positional selection requires only 1 dimension per head, and content-based selection requires $\log_2 N$ dimensions (Appendix~\ref{app:small_scale}). At 7B scale, training from scratch with $\dselect = \dmodel/4$ matches full-attention perplexity after 20B tokens while using 12\% fewer parameters and training 8\% faster. For existing models, SVD + QK fine-tuning on Mistral-7B achieves 75\% key cache savings at $\sim$2\% quality cost.
+We validate across nine experiments from algorithmic tasks to 7B-scale training (Experiments~1--4 and 6 appear in Sections~\ref{app:small_scale}--\ref{app:arch_125m}; the four largest-scale experiments are presented first). Controlled experiments confirm that positional selection requires only 1 dimension per head, and content-based selection requires $\log_2 N$ dimensions (Section~\ref{app:small_scale}). At 7B scale, training from scratch with $\dselect = \dmodel/4$ matches full-attention perplexity after 20B tokens while using 12\% fewer parameters and training 8\% faster. For existing models, SVD + QK fine-tuning on Mistral-7B achieves 75\% key cache savings at $\sim$2\% quality cost.
 
 
 % ============================================================
@@ -151,7 +146,7 @@ where $b$ is bytes per parameter. With $\dselect = \dmodel / 4$, the K cache shr
 % ============================================================
 \section{Experiments}
 
-We validate asymmetric attention through nine experiments of increasing complexity. Controlled experiments on algorithmic tasks and small-scale language modeling (Experiments~1--4) are in Appendix~\ref{app:small_scale}; architecture generalization at 125M scale (Experiment~6) is in Appendix~\ref{app:arch_125m}. The main text presents the four largest-scale experiments: post-training SVD compression of GPT-2 (Experiment~5), from-scratch training at 7B scale (Experiments~7 and~7b), and SVD + fine-tuning of Mistral-7B (Experiment~8).
+We validate asymmetric attention through nine experiments of increasing complexity. Controlled experiments on algorithmic tasks and small-scale language modeling (Experiments~1--4) are in Section~\ref{app:small_scale}; architecture generalization at 125M scale (Experiment~6) is in Section~\ref{app:arch_125m}. We first present the four largest-scale experiments: post-training SVD compression of GPT-2 (Experiment~5), from-scratch training at 7B scale (Experiments~7 and~7b), and SVD + fine-tuning of Mistral-7B (Experiment~8).
 
 
 \subsection{Experiment 5: Post-Training Compression of GPT-2}
@@ -225,7 +220,7 @@ Wall-clock time & 25.9h & 23.4h ($-$9.4\%) \\
 \end{table}
 
 \paragraph{Results.}
-Thin keys \emph{outperform} full attention at 7B scale with 2B tokens (Table~\ref{tab:7b_scratch}): 5.1\% better OWT perplexity while using 12\% fewer parameters and training 9.4\% faster. This inverts the $\sim$4\% cost observed at smaller scales (Appendix~\ref{app:small_scale},~\ref{app:arch_125m}), consistent with a regularization effect in the overparameterized regime (tokens-to-parameters ratio $\sim$0.3). The training trajectory (Figure~\ref{fig:7b_trajectory}) shows thin keys leading at every checkpoint.
+Thin keys \emph{outperform} full attention at 7B scale with 2B tokens (Table~\ref{tab:7b_scratch}): 5.1\% better OWT perplexity while using 12\% fewer parameters and training 9.4\% faster. This inverts the $\sim$4\% cost observed at smaller scales (Sections~\ref{app:small_scale},~\ref{app:arch_125m}), consistent with a regularization effect in the overparameterized regime (tokens-to-parameters ratio $\sim$0.3). The training trajectory (Figure~\ref{fig:7b_trajectory}) shows thin keys leading at every checkpoint.
 
 \begin{figure}[h]
 \centering
@@ -361,7 +356,7 @@ GSM8K & exact\_match & 38.4 & 27.7 & 25.8 & 29.9 & $-$7.4 & $-$13.7 \\
 \end{tabular}
 \end{table}
 
-At rank 512, compression is effectively lossless on knowledge and commonsense tasks ($<$1\% vs control). At rank 256, gaps remain modest (0.7--2.3\%) except for GSM8K, where multi-step math reasoning is more sensitive. Domain-matched fine-tuning recovers GSM8K quality: fine-tuning on GSM8K's own training split closes the compression gap from $-$13.7\% to just $-$1.2\% for r=256 (Appendix~\ref{app:gsm8k}). Generalization to held-out math benchmarks (Minerva Algebra, AGIEVAL AQuA-RAT) confirms transferable reasoning recovery with $<$2.5\% compression gaps.
+At rank 512, compression is effectively lossless on knowledge and commonsense tasks ($<$1\% vs control). At rank 256, gaps remain modest (0.7--2.3\%) except for GSM8K, where multi-step math reasoning is more sensitive. Domain-matched fine-tuning recovers GSM8K quality: fine-tuning on GSM8K's own training split closes the compression gap from $-$13.7\% to just $-$1.2\% for r=256 (Section~\ref{app:gsm8k}). Generalization to held-out math benchmarks (Minerva Algebra, AGIEVAL AQuA-RAT) confirms transferable reasoning recovery with $<$2.5\% compression gaps.
 
 \begin{table}[h]
 \centering
@@ -441,7 +436,7 @@ Config & 1 & 4 & 8 & 16 & 32 \\
 \end{tabular}
 \end{table}
 
-Decode attention is deeply memory-bandwidth-bound: on H100 SXM ($3.35$\,TB/s bandwidth), decode attention operates $74\times$ below the compute ridge point. Throughput scales directly with bytes saved. Amdahl's law (attention fraction $f \approx 0.73$ at batch $\geq 8$) predicts $1.38\times$ overall speedup for r256---matching measured $1.38\times$ at batch 32 to within 1\%. Standard SDPA suffices; no custom Flash Attention kernels are required. Prefill roofline analysis is in Appendix~\ref{app:throughput}.
+Decode attention is deeply memory-bandwidth-bound: on H100 SXM ($3.35$\,TB/s bandwidth), decode attention operates $74\times$ below the compute ridge point. Throughput scales directly with bytes saved. Amdahl's law (attention fraction $f \approx 0.73$ at batch $\geq 8$) predicts $1.38\times$ overall speedup for r256---matching measured $1.38\times$ at batch 32 to within 1\%. Standard SDPA suffices; no custom Flash Attention kernels are required. Prefill roofline analysis is in Section~\ref{app:throughput}.
 
 
 % ============================================================
@@ -450,7 +445,7 @@ Decode attention is deeply memory-bandwidth-bound: on H100 SXM ($3.35$\,TB/s ban
 \section{Related Work}
 
 \paragraph{Multi-Query, Grouped-Query, and Multi-Latent Attention.}
-MQA \citep{shazeer2019fast} and GQA \citep{ainslie2023gqa} reduce KV cache by sharing KV heads across query groups. MLA \citep{liu2024deepseek} projects the joint KV state into a low-dimensional latent. These methods reduce head count or joint KV dimensionality; our approach reduces \emph{per-head key dimensionality} and composes with all three (Table~\ref{tab:kv_methods} in Appendix~\ref{app:arch_125m}). \citet{costoptimalgqa2025} show commonly used GQA configurations are suboptimal for long contexts.
+MQA \citep{shazeer2019fast} and GQA \citep{ainslie2023gqa} reduce KV cache by sharing KV heads across query groups. MLA \citep{liu2024deepseek} projects the joint KV state into a low-dimensional latent. These methods reduce head count or joint KV dimensionality; our approach reduces \emph{per-head key dimensionality} and composes with all three (Table~\ref{tab:kv_methods} in Section~\ref{app:arch_125m}). \citet{costoptimalgqa2025} show commonly used GQA configurations are suboptimal for long contexts.
 
 \paragraph{Low-Rank Attention and KV Cache Compression.}
 Linformer \citep{wang2020linformer} reduces the sequence dimension; we reduce the feature dimension. Loki \citep{loki2024} exploits low-rank key structure for sparse attention. LRQK \citep{lrqk2025} jointly decomposes QK matrices during prefill. SVD-LLM \citep{svdllm2025} applies truncation-aware SVD for post-training compression. KVQuant \citep{kvquant2024} and AsymKV \citep{asymkv2024} reduce bit width; ZACK \citep{zack2025} achieves zero-overhead dimensionality compression. \citet{compressionbarriers2025} prove $\Omega(\log n)$ space lower bounds for attention. Our dimensionality reduction is orthogonal to quantization and composes multiplicatively.
@@ -650,8 +645,6 @@ Haris, A. and Onak, K.
 % ============================================================
 % APPENDIX
 % ============================================================
-\appendix
-
 \section{Small-Scale Experiments}\label{app:small_scale}
 
 Experiments 1--4 use a standard transformer decoder with pre-norm layer normalization, GELU activations, and learned positional embeddings. The only variable across configurations is $\dselect$.

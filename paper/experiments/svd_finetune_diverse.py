@@ -1,32 +1,51 @@
 """
-Experiment F: SVD Compress + Fine-tune on DIVERSE corpus + Downstream Eval
-==========================================================================
-Same as svd_finetune_and_eval.py but uses C4 (diverse web text) instead
-of WikiText-103. Tests whether diverse fine-tuning data recovers more
-performance, especially on GSM8K (math reasoning).
+Experiment F/F2/F3/G: SVD Compress + Fine-tune on DIVERSE corpus + Downstream Eval
+===================================================================================
+Same as svd_finetune_and_eval.py but uses C4 (diverse web text), C4+math mix,
+or GSM8K chain-of-thought instead of WikiText-103. Tests whether diverse or
+domain-matched fine-tuning data recovers more performance.
+
+Experiment G adds per-layer rank allocation: instead of uniform rank across all
+layers, distributes a fixed total rank budget non-uniformly based on each layer's
+singular value spectrum.
 
 Full pipeline:
   1. Load Mistral-7B
-  2. SVD compress W_K to target rank (on GPU)
-  3. Fine-tune QK projections on C4 (10M tokens)
-  4. Run downstream evaluation via lm-eval-harness
+  2. (Exp G) Compute per-layer rank allocation from SVD spectra
+  3. SVD compress W_K to target rank (uniform or per-layer)
+  4. Fine-tune QK projections on training data
+  5. Run downstream evaluation via lm-eval-harness
 
 Usage:
-  # Rank 256 + diverse FT (main experiment)
-  CUDA_VISIBLE_DEVICES=0 python svd_finetune_diverse.py --rank 256 --device cuda:0
+  # Experiment F: C4 only
+  CUDA_VISIBLE_DEVICES=0 python svd_finetune_diverse.py --rank 256 --data c4
 
-  # Rank 512 + diverse FT
-  CUDA_VISIBLE_DEVICES=4 python svd_finetune_diverse.py --rank 512 --device cuda:0
+  # Experiment F2: C4 + math mixed (7M C4 + 3M math)
+  CUDA_VISIBLE_DEVICES=0 python svd_finetune_diverse.py --rank 256 --data c4_math
+  CUDA_VISIBLE_DEVICES=1 python svd_finetune_diverse.py --rank 512 --data c4_math
+  CUDA_VISIBLE_DEVICES=2 python svd_finetune_diverse.py --rank 1024 --data c4_math
+
+  # Experiment F3: GSM8K chain-of-thought (domain-matched FT for math reasoning)
+  CUDA_VISIBLE_DEVICES=3 python svd_finetune_diverse.py --rank 1024 --data gsm8k
+  CUDA_VISIBLE_DEVICES=4 python svd_finetune_diverse.py --rank 512  --data gsm8k
+  CUDA_VISIBLE_DEVICES=5 python svd_finetune_diverse.py --rank 256  --data gsm8k
+
+  # Experiment G: Per-layer rank allocation
+  CUDA_VISIBLE_DEVICES=0 python svd_finetune_diverse.py --rank 256 --alloc energy --data gsm8k
+  CUDA_VISIBLE_DEVICES=1 python svd_finetune_diverse.py --rank 256 --alloc greedy --data gsm8k
+  CUDA_VISIBLE_DEVICES=2 python svd_finetune_diverse.py --rank 512 --alloc energy --data gsm8k
 
   # Control (no compression, same diverse FT)
-  CUDA_VISIBLE_DEVICES=5 python svd_finetune_diverse.py --rank 1024 --device cuda:0
+  CUDA_VISIBLE_DEVICES=5 python svd_finetune_diverse.py --rank 1024 --data c4
 """
 
 import argparse
 import gc
+import glob
 import json
 import math
 import os
+import random
 import time
 
 import torch
@@ -106,6 +125,122 @@ def load_wikitext103_split(tokenizer, split, seq_len=2048, max_tokens=None):
     return input_ids
 
 
+def load_math_split(tokenizer, seq_len=2048, max_tokens=3_000_000,
+                    math_dir='/sg-pretrain/datasets/mathematics_dataset-v1.0'):
+    """Load DeepMind Mathematics Dataset as formatted Q/A text.
+
+    Reads from all difficulty levels (easy/medium/hard), shuffles, and
+    formats as 'Question: ...\nAnswer: ...\n\n' for causal LM training.
+    """
+    print(f"  Loading math dataset from {math_dir}...", flush=True)
+
+    # Collect all txt files across difficulty levels
+    txt_files = []
+    for difficulty in ['train-easy', 'train-medium', 'train-hard']:
+        pattern = os.path.join(math_dir, difficulty, '*.txt')
+        txt_files.extend(sorted(glob.glob(pattern)))
+    print(f"    Found {len(txt_files)} files across 3 difficulty levels", flush=True)
+
+    # Read Q/A pairs from all files, sampling proportionally
+    all_pairs = []
+    for fpath in txt_files:
+        with open(fpath, 'r') as f:
+            lines = f.read().strip().split('\n')
+        # Pairs are consecutive lines: question, answer
+        pairs = [(lines[i], lines[i+1]) for i in range(0, len(lines) - 1, 2)]
+        all_pairs.extend(pairs)
+
+    random.shuffle(all_pairs)
+    print(f"    Total Q/A pairs available: {len(all_pairs):,}", flush=True)
+
+    # Format and tokenize until we reach target tokens
+    target_with_buffer = int(max_tokens * 1.1)
+    all_ids = []
+    n_collected = 0
+    n_pairs = 0
+
+    for q, a in all_pairs:
+        text = f"Question: {q}\nAnswer: {a}\n\n"
+        ids = tokenizer(text, return_tensors='pt', add_special_tokens=False)['input_ids'][0]
+        all_ids.append(ids)
+        n_collected += len(ids)
+        n_pairs += 1
+
+        if n_pairs % 10000 == 0:
+            print(f"    {n_pairs:,} pairs, {n_collected:,} tokens...", end='\r', flush=True)
+
+        if n_collected >= target_with_buffer:
+            break
+
+    print(f"    Collected {n_collected:,} tokens from {n_pairs:,} math pairs", flush=True)
+
+    input_ids = torch.cat(all_ids)
+    if len(input_ids) > max_tokens:
+        input_ids = input_ids[:max_tokens]
+
+    n_chunks = len(input_ids) // seq_len
+    input_ids = input_ids[:n_chunks * seq_len].view(n_chunks, seq_len)
+    print(f"  math: using {n_chunks * seq_len:,} tokens "
+          f"({n_chunks} chunks of {seq_len})", flush=True)
+    return input_ids
+
+
+def load_gsm8k_split(tokenizer, seq_len=2048, max_tokens=None):
+    """Load GSM8K training split with chain-of-thought answers."""
+    from datasets import load_dataset
+    print("  Loading GSM8K train split...", flush=True)
+    ds = load_dataset('gsm8k', 'main', split='train')  # 7,473 examples
+
+    # Format each example as "Question: ...\nAnswer: ...\n\n"
+    # Preserves <<calc>> annotations and #### final answer
+    all_ids = []
+    n_collected = 0
+    for ex in ds:
+        text = f"Question: {ex['question']}\nAnswer: {ex['answer']}\n\n"
+        ids = tokenizer(text, return_tensors='pt', add_special_tokens=False)['input_ids'][0]
+        all_ids.append(ids)
+        n_collected += len(ids)
+
+    print(f"    Collected {n_collected:,} tokens from {len(ds)} examples", flush=True)
+
+    input_ids = torch.cat(all_ids)
+    # GSM8K train is ~1.5-2M tokens total — use all of it
+    if max_tokens and len(input_ids) > max_tokens:
+        input_ids = input_ids[:max_tokens]
+
+    n_chunks = len(input_ids) // seq_len
+    input_ids = input_ids[:n_chunks * seq_len].view(n_chunks, seq_len)
+    print(f"  gsm8k: using {n_chunks * seq_len:,} tokens "
+          f"({n_chunks} chunks of {seq_len})", flush=True)
+    return input_ids
+
+
+def load_c4_math_mixed(tokenizer, seq_len=2048, max_tokens=10_000_000,
+                       c4_tokens=7_000_000, math_tokens=3_000_000,
+                       math_dir='/sg-pretrain/datasets/mathematics_dataset-v1.0'):
+    """Load mixed corpus: C4 (7M tokens) + math (3M tokens), shuffled.
+
+    Returns chunked input_ids with chunks from both sources interleaved.
+    """
+    print(f"  Loading mixed C4+math ({c4_tokens/1e6:.0f}M + {math_tokens/1e6:.0f}M tokens)...",
+          flush=True)
+
+    c4_ids = load_c4_split(tokenizer, 'train', seq_len, c4_tokens)
+    math_ids = load_math_split(tokenizer, seq_len, math_tokens, math_dir)
+
+    print(f"  Combining: {c4_ids.shape[0]} C4 chunks + {math_ids.shape[0]} math chunks",
+          flush=True)
+
+    # Concatenate and shuffle chunks
+    combined = torch.cat([c4_ids, math_ids], dim=0)
+    perm = torch.randperm(combined.shape[0])
+    combined = combined[perm]
+
+    total_tokens = combined.shape[0] * seq_len
+    print(f"  Mixed total: {total_tokens:,} tokens ({combined.shape[0]} chunks)", flush=True)
+    return combined
+
+
 # ============================================================
 # Evaluation (PPL)
 # ============================================================
@@ -132,27 +267,42 @@ def evaluate_ppl(model, input_ids, device, batch_size=1):
 # ============================================================
 # SVD compression of W_K (on GPU for speed)
 # ============================================================
-def compress_k_layers(model, rank, device='cuda:0', verbose=True):
-    """SVD compress W_K in all layers to target rank."""
+def compress_k_layers(model, rank, device='cuda:0', verbose=True, ranks=None):
+    """SVD compress W_K in all layers to target rank.
+
+    Args:
+        ranks: Optional list of per-layer ranks. If provided, uses ranks[i]
+               for each layer instead of the uniform `rank` argument.
+    """
     n_layers = model.config.num_hidden_layers
     n_kv_heads = model.config.num_key_value_heads
     d_head = model.config.hidden_size // model.config.num_attention_heads
     k_dim = n_kv_heads * d_head
 
-    if rank >= k_dim:
+    if ranks is None and rank >= k_dim:
         if verbose:
             print(f"  Rank {rank} >= K dim {k_dim}, skipping compression (control)")
         return []
 
     if verbose:
         print(f"  K projection: [{k_dim}, {model.config.hidden_size}]")
-        print(f"  Target rank: {rank} (of {k_dim}), saving {1 - rank/k_dim:.0%} of K cache")
+        if ranks is not None:
+            print(f"  Per-layer ranks: min={min(ranks)}, max={max(ranks)}, "
+                  f"avg={sum(ranks)/len(ranks):.0f}")
+        else:
+            print(f"  Target rank: {rank} (of {k_dim}), saving {1 - rank/k_dim:.0%} of K cache")
 
     errors = []
     for i in range(n_layers):
+        layer_rank = ranks[i] if ranks is not None else rank
+        if layer_rank >= k_dim:
+            errors.append(0.0)
+            if verbose and (i == 0 or i == n_layers - 1 or (i + 1) % 8 == 0):
+                print(f"    Layer {i:2d}: rank={layer_rank} (no compression)")
+            continue
         W_K = model.model.layers[i].self_attn.k_proj.weight.data.float().to(device)
         U, S, Vh = torch.linalg.svd(W_K, full_matrices=False)
-        W_K_compressed = (U[:, :rank] * S[:rank]) @ Vh[:rank, :]
+        W_K_compressed = (U[:, :layer_rank] * S[:layer_rank]) @ Vh[:layer_rank, :]
         err = torch.norm(W_K - W_K_compressed).item() / torch.norm(W_K).item()
         errors.append(err)
         model.model.layers[i].self_attn.k_proj.weight.data = W_K_compressed.to(
@@ -160,11 +310,123 @@ def compress_k_layers(model, rank, device='cuda:0', verbose=True):
             dtype=model.model.layers[i].self_attn.k_proj.weight.dtype,
         )
         if verbose and (i == 0 or i == n_layers - 1 or (i + 1) % 8 == 0):
-            print(f"    Layer {i:2d}: K error = {err:.4f}")
+            print(f"    Layer {i:2d}: rank={layer_rank}, K error = {err:.4f}")
 
     if verbose:
         print(f"    Average K error: {sum(errors)/len(errors):.4f}", flush=True)
     return errors
+
+
+def compute_layer_ranks(model, avg_rank, strategy='energy', device='cuda:0',
+                        min_rank=32, energy_threshold=0.99):
+    """Compute per-layer SVD ranks for a given total budget.
+
+    Args:
+        model: The model with K projections to analyze.
+        avg_rank: Target average rank per layer.
+        strategy: 'energy' (scale by 99%-energy rank) or 'greedy' (water-filling).
+        device: Device for SVD computation.
+        min_rank: Minimum rank for any layer.
+        energy_threshold: Energy fraction for the 'energy' strategy (default 0.99).
+
+    Returns:
+        List of n_layers integers summing to n_layers * avg_rank.
+    """
+    n_layers = model.config.num_hidden_layers
+    n_kv_heads = model.config.num_key_value_heads
+    d_head = model.config.hidden_size // model.config.num_attention_heads
+    k_dim = n_kv_heads * d_head
+    total_budget = n_layers * avg_rank
+
+    if avg_rank >= k_dim:
+        return [k_dim] * n_layers  # no compression needed
+
+    # Compute singular values for all layers
+    spectra = []
+    for i in range(n_layers):
+        W_K = model.model.layers[i].self_attn.k_proj.weight.data.float().to(device)
+        S = torch.linalg.svdvals(W_K)
+        spectra.append(S.cpu())
+        if i % 8 == 0:
+            print(f"    SVD spectrum layer {i}/{n_layers}...", end='\r', flush=True)
+    print(f"    Computed spectra for {n_layers} layers.", flush=True)
+
+    if strategy == 'energy':
+        # Find rank needed to capture energy_threshold of Frobenius norm
+        natural_ranks = []
+        for i, S in enumerate(spectra):
+            energy = torch.cumsum(S ** 2, dim=0) / (S ** 2).sum()
+            hits = (energy >= energy_threshold).nonzero(as_tuple=True)[0]
+            rank_needed = hits[0].item() + 1 if len(hits) > 0 else len(S)
+            natural_ranks.append(max(rank_needed, min_rank))
+
+        # Scale proportionally to hit total budget
+        total_natural = sum(natural_ranks)
+        scale = total_budget / total_natural
+        ranks = [max(min_rank, min(k_dim, int(round(r * scale)))) for r in natural_ranks]
+
+        # Adjust residual to hit exact budget
+        diff = total_budget - sum(ranks)
+        if diff > 0:
+            # Add rank to layers with most headroom (furthest from k_dim)
+            headroom = [(k_dim - ranks[i], i) for i in range(n_layers)]
+            headroom.sort(reverse=True)
+            for _, i in headroom:
+                add = min(diff, k_dim - ranks[i])
+                ranks[i] += add
+                diff -= add
+                if diff <= 0:
+                    break
+        elif diff < 0:
+            # Remove rank from layers with most excess (furthest from min_rank)
+            excess = [(ranks[i] - min_rank, i) for i in range(n_layers)]
+            excess.sort(reverse=True)
+            for _, i in excess:
+                sub = min(-diff, ranks[i] - min_rank)
+                ranks[i] -= sub
+                diff += sub
+                if diff >= 0:
+                    break
+
+    elif strategy == 'greedy':
+        # Water-filling: start at min_rank, greedily allocate to worst layer
+        ranks = [min_rank] * n_layers
+        remaining = total_budget - sum(ranks)
+        step = 32
+
+        while remaining >= step:
+            # Find layer with highest relative reconstruction error
+            errors = []
+            for i, S in enumerate(spectra):
+                r = ranks[i]
+                if r >= k_dim:
+                    errors.append(0.0)
+                else:
+                    err = (S[r:] ** 2).sum().sqrt() / (S ** 2).sum().sqrt()
+                    errors.append(err.item())
+            worst = max(range(n_layers), key=lambda i: errors[i])
+            add = min(step, k_dim - ranks[worst], remaining)
+            ranks[worst] += add
+            remaining = total_budget - sum(ranks)
+
+        # Distribute any small remainder one-at-a-time
+        while remaining > 0:
+            errors = []
+            for i, S in enumerate(spectra):
+                r = ranks[i]
+                if r >= k_dim:
+                    errors.append(0.0)
+                else:
+                    err = (S[r:] ** 2).sum().sqrt() / (S ** 2).sum().sqrt()
+                    errors.append(err.item())
+            worst = max(range(n_layers), key=lambda i: errors[i])
+            ranks[worst] += 1
+            remaining -= 1
+
+    else:
+        raise ValueError(f"Unknown allocation strategy: {strategy}")
+
+    return ranks
 
 
 # ============================================================
@@ -264,9 +526,19 @@ def main():
                         default='/sg-pretrain/models/mistral-7b')
     parser.add_argument('--rank', type=int, default=256,
                         help='SVD rank for K compression (K dim is 1024)')
+    parser.add_argument('--alloc', type=str, default='uniform',
+                        choices=['uniform', 'energy', 'greedy'],
+                        help='Per-layer rank allocation strategy')
     parser.add_argument('--data', type=str, default='c4',
-                        choices=['c4', 'wikitext103'],
+                        choices=['c4', 'wikitext103', 'c4_math', 'gsm8k'],
                         help='Fine-tuning data source')
+    parser.add_argument('--math_dir', type=str,
+                        default='/sg-pretrain/datasets/mathematics_dataset-v1.0',
+                        help='Path to DeepMind Mathematics Dataset')
+    parser.add_argument('--c4_tokens', type=int, default=7_000_000,
+                        help='C4 tokens in mixed mode (default 7M)')
+    parser.add_argument('--math_tokens', type=int, default=3_000_000,
+                        help='Math tokens in mixed mode (default 3M)')
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--lr', type=float, default=5e-5)
     parser.add_argument('--batch_size', type=int, default=1)
@@ -286,10 +558,19 @@ def main():
     k_dim = 1024  # Mistral-7B: 8 KV heads * 128 dims
     is_compressed = args.rank < k_dim
     data_tag = args.data.replace('wikitext103', 'wt103')
-    tag = f"r{args.rank}_{data_tag}_ft" if is_compressed else f"control_{data_tag}_ft"
+    alloc_tag = f"_{args.alloc}" if args.alloc != 'uniform' else ""
+    tag = f"r{args.rank}{alloc_tag}_{data_tag}_ft" if is_compressed else f"control_{data_tag}_ft"
+    if args.alloc != 'uniform':
+        exp_label = "G"
+    elif args.data == 'c4_math':
+        exp_label = "F2"
+    elif args.data == 'gsm8k':
+        exp_label = "F3"
+    else:
+        exp_label = "F"
 
     print("=" * 70)
-    print(f"Experiment F: SVD Compress (rank={args.rank}) + Fine-tune on {args.data}")
+    print(f"Experiment {exp_label}: SVD Compress (rank={args.rank}) + Fine-tune on {args.data}")
     print("=" * 70)
 
     # Load tokenizer
@@ -298,9 +579,17 @@ def main():
 
     # Load data
     print(f"\nLoading training data ({args.data})...", flush=True)
-    if args.data == 'c4':
+    if args.data == 'c4_math':
+        train_ids = load_c4_math_mixed(
+            tokenizer, args.seq_len, args.max_train_tokens,
+            c4_tokens=args.c4_tokens, math_tokens=args.math_tokens,
+            math_dir=args.math_dir)
+    elif args.data == 'c4':
         train_ids = load_c4_split(
             tokenizer, 'train', args.seq_len, args.max_train_tokens)
+    elif args.data == 'gsm8k':
+        train_ids = load_gsm8k_split(
+            tokenizer, args.seq_len, args.max_train_tokens)
     else:
         train_ids = load_wikitext103_split(
             tokenizer, 'train', args.seq_len, args.max_train_tokens)
@@ -328,8 +617,18 @@ def main():
 
     # SVD compress
     if is_compressed:
+        layer_ranks = None
+        if args.alloc != 'uniform':
+            print(f"\nComputing per-layer ranks (strategy={args.alloc}, avg_rank={args.rank})...",
+                  flush=True)
+            layer_ranks = compute_layer_ranks(
+                model, args.rank, args.alloc, str(device))
+            print(f"  Ranks: {layer_ranks}")
+            print(f"  Range: [{min(layer_ranks)}, {max(layer_ranks)}], "
+                  f"sum={sum(layer_ranks)}")
+
         print(f"\nApplying SVD compression (rank={args.rank}) on GPU...", flush=True)
-        compress_k_layers(model, args.rank, device=str(device))
+        compress_k_layers(model, args.rank, device=str(device), ranks=layer_ranks)
         torch.cuda.empty_cache()
 
         _, compressed_ppl = evaluate_ppl(model, val_ids, device)
@@ -413,6 +712,7 @@ def main():
     summary = {
         'model': 'mistral-7b',
         'rank': args.rank,
+        'alloc': args.alloc,
         'k_dim': k_dim,
         'is_compressed': is_compressed,
         'k_cache_saved': f"{1-args.rank/k_dim:.0%}" if is_compressed else "0%",
@@ -425,6 +725,8 @@ def main():
         'max_train_tokens': args.max_train_tokens,
         'tasks': downstream_summary,
     }
+    if args.alloc != 'uniform' and is_compressed:
+        summary['layer_ranks'] = layer_ranks
 
     save_path = os.path.join(args.save_dir, f'downstream_{tag}.json')
     with open(save_path, 'w') as f:

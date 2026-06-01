@@ -1,0 +1,26 @@
+{
+  "run_name": "expD_125M_mha",
+  "experiment": "D",
+  "method": "mha",
+  "method_config": {},
+  "model_size": "125M",
+  "d_model": 768,
+  "n_heads": 12,
+  "n_layers": 12,
+  "kv_cache_budget": 1536,
+  "kv_cache_baseline": 1536,
+  "kv_cache_saving": "0.0%",
+  "total_params": 101713152,
+  "attn_params": 28311552,
+  "best_val_ppl": 22.46,
+  "best_epoch": 4,
+  "test_ppl": 23.07,
+  "test_loss": 3.1384,
+  "training": {
+    "epochs": 5,
+    "lr": 0.0003,
+    "batch_size": 32,
+    "seq_len": 512,
+    "seed": 42
+  }
+}

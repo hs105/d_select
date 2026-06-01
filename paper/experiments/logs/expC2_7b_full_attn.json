@@ -1,0 +1,22 @@
+{
+  "experiment": "C2",
+  "mode": "full_attn",
+  "best_owt_ppl": 9.252036971936153,
+  "best_owt_step": 305175,
+  "best_wt103_ppl": 12.587201093598242,
+  "final_owt_ppl": 9.252036971936153,
+  "final_wt103_ppl": 13.136951212164686,
+  "total_hours": 261.5833164396551,
+  "total_tokens": 20000000000,
+  "total_epochs": 3,
+  "n_params": 6738415616,
+  "n_thin_params_saved": 0,
+  "config": {
+    "lr": 0.0003,
+    "seq_len": 1024,
+    "batch_size": 2,
+    "accum": 8,
+    "world_size": 4,
+    "eff_batch": 64
+  }
+}
