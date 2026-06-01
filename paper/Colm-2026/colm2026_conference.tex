@@ -59,7 +59,11 @@ Reducing KV Cache via Low-Dimensional Attention Selection}
 \begin{abstract}
 Standard transformer attention uses identical dimensionality for queries, keys, and values, yet these components serve different roles: queries and keys produce scalar attention weights (\emph{selection}), while values carry rich representations (\emph{value transfer}). We show that selection requires only $\BigO(\log N)$ dimensions to distinguish among $N$ relevant token categories (e.g., syntactic roles, semantic clusters, positional patterns)---far fewer than value transfer needs.
 
+<<<<<<< HEAD
 We introduce \textbf{factored keys}, which exploit this asymmetry to physically shrink the KV cache of \emph{any pretrained model without retraining from scratch}---unlike GQA and MLA, which must be designed into the architecture before pretraining. We factorize each key projection $W_K \approx A_{d \times r} B_{r \times d}$ via truncated SVD (where $r = \dselect$), set $W_K' = A$ as the new key projection producing compact $r$-dimensional keys for the cache, and absorb $B^\top$ into the query projection ($W_Q' = W_Q B^\top$) at zero cost---since queries are never cached. At 7B scale, training from scratch with $r = \dmodel/4$ matches full-attention perplexity (9.2 vs 9.3 PPL after 20B tokens) while using 12\% fewer parameters and training 8\% faster. For existing models, SVD + QK fine-tuning (3 epochs, $<$1\% of pretraining data) achieves 75\% key cache savings at $\sim$2\% quality cost on both GPT-2 and Mistral-7B. The approach composes with GQA and quantization for up to 16$\times$ combined key cache compression. For a 7B model serving 128K context, factored keys save 25\,GB of KV cache per user, enabling $\sim$60\% more concurrent users on identical hardware.
+=======
+We introduce \textbf{factored keys}, which exploit this asymmetry to physically shrink the KV cache of \emph{any pretrained model without retraining from scratch}---unlike GQA and MLA, which must be designed into the architecture before pretraining. We factorize each key projection $W_K \approx A_{d \times r} B_{r \times d}$ via truncated SVD (where $r = \dselect$), set $W_K' = A$ as the new key projection producing compact $r$-dimensional keys for the cache, and absorb $B^\top$ into the query projection ($W_Q' = W_Q B^\top$) at zero cost---since queries are never cached. At 7B scale, training from scratch with $\dselect = \dmodel/4$ matches full-attention perplexity ($9.24$ vs $9.25$ PPL after 20B tokens, mean over 2 seeds) while using 12\% fewer parameters and training 8\% faster. For existing models, SVD + QK fine-tuning (3 epochs, $<$1\% of pretraining data) achieves 75\% key cache savings at $\sim$2\% quality cost on both GPT-2 and Mistral-7B. The approach composes with GQA and quantization for up to 16$\times$ combined key cache compression. For a 7B model serving 128K context, factored keys save 25\,GB of KV cache per user, enabling $\sim$60\% more concurrent users on identical hardware.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 \end{abstract}
 
 % ============================================================
@@ -73,7 +77,11 @@ As models scale to longer contexts, the KV cache becomes the dominant memory bot
 
 We take a complementary approach, motivated by a structural observation: attention performs two functionally distinct operations with fundamentally different complexity requirements. (1)~\textbf{Selection} ($QK^\top$): determining \emph{which} tokens are relevant via scalar attention weights. (2)~\textbf{Value transfer} ($\text{attn} \cdot V$): aggregating information from selected tokens. Our key insight is that selection is a \emph{ranking} problem, not a representation problem: by the Johnson--Lindenstrauss lemma \citep{johnson1984extensions}, distinguishing among $N$ items in a dot-product space requires only $\BigO(\log N)$ dimensions. Value transfer, by contrast, must preserve the full representational capacity of the model. Recent theoretical work on KV cache compression lower bounds provides independent support: \citet{compressionbarriers2025} show that any attention-based token generation algorithm requires $\Theta(nd)$ space with $d = \Omega(\log n)$, establishing that the KV cache cannot be compressed below $\log n$ dimensions per token without loss. This asymmetry implies that queries and keys are drastically overparameterized at $d_k = \dmodel$.
 
+<<<<<<< HEAD
 We propose \textbf{asymmetric attention}, where queries and keys project to $\dselect \ll \dmodel$ while values retain full dimensionality. The attention computation is unchanged---$QK^\top / \sqrt{\dselect}$ produces scalar weights applied to $V$ of any dimensionality. This yields three benefits: (i)~parameter reduction (up to 75\% for QK when $\dselect = \dmodel/4$), (ii)~KV cache reduction (the key cache stores $\dselect$-dimensional vectors, saving 25\,GB per user at 128K context for 7B models), and (iii)~attention compute reduction ($\BigO(n^2 \cdot \dselect)$ instead of $\BigO(n^2 \cdot \dmodel)$). Unlike GQA or MLA, this approach reduces the \emph{per-head dimensionality} of keys while keeping the number of heads and value dimensionality intact---and composes with both for further savings.
+=======
+We propose \textbf{asymmetric attention}, where queries and keys project to $\dselect \ll \dmodel$ while values retain full dimensionality. The attention computation is unchanged---$QK^\top / \sqrt{d_{\text{head}}^{QK}}$ produces scalar weights applied to $V$ of any dimensionality. This yields three benefits: (i)~parameter reduction (up to 75\% for QK when $\dselect = \dmodel/4$), (ii)~KV cache reduction (the key cache stores $\dselect$-dimensional vectors, saving 25\,GB per user at 128K context for 7B models), and (iii)~attention compute reduction ($\BigO(n^2 \cdot \dselect)$ instead of $\BigO(n^2 \cdot \dmodel)$). Unlike GQA or MLA, this approach reduces the \emph{per-head dimensionality} of keys while keeping the number of heads and value dimensionality intact---and composes with both for further savings.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 A central contribution of this work is that asymmetric attention can be applied to \emph{any existing pretrained model} without retraining from scratch---in contrast to GQA and MLA, which must be built into the architecture before pretraining or require expensive conversion \citep{mha2mla2025}. We introduce \textbf{factored keys}, an inference primitive that physically shrinks the key cache of already-deployed models: factorize each layer's $W_K \approx A_{d \times r} B_{r \times d}$ via truncated SVD, use $A$ as the new key projection producing compact $r$-dimensional cached keys, and absorb $B^\top$ into the query projection at zero memory cost---exploiting the fundamental asymmetry that keys accumulate in memory while queries are ephemeral. With optional lightweight QK fine-tuning (3 epochs on $<$1\% of pretraining data), this recovers nearly all quality. This is related to recent work on low-rank KV cache compression \citep{lrqk2025, svdllm2025, loki2024}, but differs in a key respect: we compress \emph{only} keys and absorb the cost into queries, which are never cached. A striking finding is that keys are far more compressible than queries: at rank 192 on GPT-2, $K$-only SVD degrades by 26\% while $Q$-only degrades by 181\%---a 7$\times$ asymmetry consistent with recent observations that key vectors lie in a significantly lower-dimensional space \citep{loki2024}.
 
@@ -87,13 +95,7 @@ We validate across nine experiments from algorithmic tasks to 7B-scale training 
 
 \subsection{Asymmetric Attention}
 
-In multi-head attention with $h$ heads, standard transformers set $\dhead = \dmodel / h$ for all of $Q$, $K$, and $V$. We decouple this by introducing $d_{\text{select}}$, the total dimensionality for queries and keys:
-
-\begin{equation}
-d_{\text{head}}^{QK} = \frac{\dselect}{h}, \qquad d_{\text{head}}^{V} = \frac{\dmodel}{h}
-\end{equation}
-
-For each head $i$, the attention computation is:
+In multi-head attention with $h$ heads, standard transformers set $\dhead = \dmodel / h$ for all of $Q$, $K$, and $V$. We decouple this by introducing $\dselect$: the per-head QK dimension becomes $d_{\text{head}}^{QK} = \dselect / h$ while the value dimension stays $d_{\text{head}}^{V} = \dmodel / h$. For each head $i$:
 \begin{align}
 Q_i &= XW_Q^{(i)}, \quad W_Q^{(i)} \in \mathbb{R}^{\dmodel \times d_{\text{head}}^{QK}} \\
 K_i &= XW_K^{(i)}, \quad W_K^{(i)} \in \mathbb{R}^{\dmodel \times d_{\text{head}}^{QK}} \\
@@ -105,7 +107,11 @@ No projection is needed between attention weights and value aggregation: the wei
 
 \subsection{Theoretical Motivation}\label{sec:theory}
 
+<<<<<<< HEAD
 We argue that selection requires $\BigO(\log N)$ dimensions where $N$ is the number of distinct patterns the attention mechanism must distinguish. The attention weight $\alpha_{ij} \propto \exp(q_i^\top k_j / \sqrt{d})$ assigns scalar relevance scores---a ranking problem. By the Johnson--Lindenstrauss lemma, $N$ points can be embedded into $\BigO(\log N)$ dimensions while preserving pairwise distances, so $\BigO(\log N)$ dimensions suffice to maintain the relative ordering of dot-product similarities. In language modeling, the effective $N$ is the number of distinct selection patterns (syntactic roles, semantic clusters, recency patterns)---empirically in the hundreds, much smaller than vocabulary size, suggesting $\dselect \approx 10$--$20$ dimensions per head. Value transfer, by contrast, must preserve the complete representational content across all $\dmodel$ dimensions.
+=======
+We argue that selection requires $\BigO(\log N)$ dimensions where $N$ is the number of distinct patterns the attention mechanism must distinguish. The attention weight $\alpha_{ij} \propto \exp(q_i^\top k_j / \sqrt{d_{\text{head}}^{QK}})$ assigns scalar relevance scores---a ranking problem. By the Johnson--Lindenstrauss lemma, $N$ points can be embedded into $\BigO(\log N)$ dimensions while preserving pairwise distances, so $\BigO(\log N)$ dimensions suffice to maintain the relative ordering of dot-product similarities. In language modeling, the effective $N$ is the number of distinct selection patterns (syntactic roles, semantic clusters, recency patterns)---empirically in the hundreds, much smaller than vocabulary size, suggesting $d_{\text{head}}^{QK} \approx 10$--$20$ dimensions per head. Value transfer, by contrast, must preserve the complete representational content across all $\dmodel$ dimensions.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 
 \subsection{Factored Keys: An Inference Primitive for Pretrained Models}
@@ -133,7 +139,11 @@ Keys become $k_j' = x_j W_K' \in \mathbb{R}^r$---the ``thin keys'' stored in the
 
 Crucially, \emph{nothing else in the network changes}---$W_V$, $W_O$, the FFN, and all normalization layers remain untouched. The only modification is replacing $W_K$ and $W_Q$ with their thin counterparts, computed from a single SVD. Despite this simplicity, training from scratch with thin keys at 7B scale achieves 9.2 vs 9.3 validation PPL after 20B tokens---matching full attention---while using 12\% fewer parameters and training 8\% faster (Experiments~7--7b, Tables~\ref{tab:7b_scratch} and~\ref{tab:7b_extended}).
 
+<<<<<<< HEAD
 This zero-cost property distinguishes factored keys from all existing KV compression methods. GQA \citep{ainslie2023gqa} and MLA \citep{liu2024deepseek} must be designed into the architecture before pretraining---they cannot be applied to already-deployed models. LRQK \citep{lrqk2025} performs QK decomposition at prefill time, adding latency to every inference call. SVD-LLM \citep{svdllm2025} requires calibration data and a whitening step to guide truncation. By contrast, factored keys require only a one-time offline SVD per layer---no calibration data, no prefill overhead, no retraining---and the resulting model runs with standard attention kernels. We validate this in Experiments~5 and~8: zero-cost SVD at rank $\dmodel/2$ immediately achieves 50\% key cache savings at +2\% PPL with no fine-tuning at all. To compress more aggressively, optional lightweight QK fine-tuning (3 epochs) recovers quality at lower ranks, enabling 75\% savings at rank $\dmodel/4$ with only +2\% PPL and 22--38\% faster decode throughput on H100 (Tables~\ref{tab:svd_finetune},~\ref{tab:mistral7b}, and~\ref{tab:decode_throughput}).
+=======
+This zero-cost property distinguishes factored keys from all existing KV compression methods. GQA \citep{ainslie2023gqa} and MLA \citep{liu2024deepseek} must be designed into the architecture before pretraining---they cannot be applied to already-deployed models. LRQK \citep{lrqk2025} performs QK decomposition at prefill time, adding latency to every inference call. SVD-LLM \citep{svdllm2025} requires calibration data and a whitening step to guide truncation. By contrast, factored keys require only a one-time offline SVD per layer---no calibration data, no prefill overhead, no retraining---and the resulting model runs with standard attention kernels. We validate this in Experiments~5 and~8: zero-cost SVD at rank $\dmodel/2$ immediately achieves 50\% key cache savings at +2\% PPL with no fine-tuning at all. To compress more aggressively, optional lightweight QK fine-tuning (3 epochs) recovers quality at lower ranks, enabling 75\% savings at rank $\dmodel/4$ with only +2\% PPL (Tables~\ref{tab:svd_finetune} and~\ref{tab:mistral7b}), with decode throughput gains increasing with batch size as the KV cache fraction of memory bandwidth grows (Table~\ref{tab:decode_throughput}).
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 
 \subsection{KV Cache Implications}
@@ -270,21 +280,34 @@ We extend training to 20B tokens (3 epochs over OpenWebText, 305{,}175 steps), i
 
 \begin{table}[h]
 \centering
+<<<<<<< HEAD
 \caption{7B LLaMA on OpenWebText (20B tokens). Both architectures converge to the same quality; thin keys train 8\% faster.}
+=======
+\caption{7B LLaMA on OpenWebText (20B tokens), mean $\pm$ std over 2 seeds. Both architectures converge to the same quality; thin keys train 8\% faster.}
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 \label{tab:7b_extended}
 \begin{tabular}{lrr}
 \toprule
  & Full Attention & Thin Keys ($\dselect = \dmodel/4$) \\
 \midrule
 Parameters & 6.74B & 5.93B ($-$12\%) \\
+<<<<<<< HEAD
 OWT val PPL & 9.3 & \textbf{9.2} ($-$1.1\%) \\
 Wall-clock time & 261.6h & 241.6h ($-$7.7\%) \\
+=======
+OWT val PPL & $9.25 \pm 0.00$ & $\mathbf{9.24 \pm 0.00}$ ($-$0.1\%) \\
+WT103 val PPL & $13.26 \pm 0.12$ & $\mathbf{13.00 \pm 0.07}$ ($-$2.0\%) \\
+Wall-clock time & $261.5 \pm 0.1$h & $240.7 \pm 0.9$h ($-$8.0\%) \\
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
+<<<<<<< HEAD
 At 20B tokens, both models converge to nearly identical perplexity (9.2 vs 9.3), confirming the earlier advantage was a regularization effect. Crucially, thin keys \emph{never fall behind}. Figure~\ref{fig:7b_extended_trajectory} shows PPL vs training step (curves merge by $\sim$150K steps) and vs wall-clock time (thin keys reach any target PPL $\sim$20 hours sooner). Combined with 8\% speedup and 75\% key cache savings, thin keys are a strictly dominant choice at this scale.
+=======
+At 20B tokens, both models converge to nearly identical perplexity ($9.24 \pm 0.00$ vs $9.25 \pm 0.00$ OWT, mean over 2 seeds), confirming the earlier advantage was a regularization effect. Thin keys are slightly better on WT-103 ($13.00$ vs $13.26$). Crucially, thin keys \emph{never fall behind}. Figure~\ref{fig:7b_extended_trajectory} shows PPL vs training step (curves merge by $\sim$150K steps) and vs wall-clock time (thin keys reach any target PPL $\sim$20 hours sooner). Downstream evaluation (Table~\ref{tab:c2_downstream}) confirms task parity: Hellaswag, ARC-Challenge, and WinoGrande scores match within noise ($<$1.5\%). Combined with 8\% speedup and 75\% key cache savings, thin keys are a strictly dominant choice at this scale.
 
 \begin{figure}[t]
 \centering
@@ -293,13 +316,44 @@ At 20B tokens, both models converge to nearly identical perplexity (9.2 vs 9.3),
 \label{fig:7b_extended_trajectory}
 \end{figure}
 
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
+\begin{figure}[t]
+\centering
+<<<<<<< HEAD
+\includegraphics[width=\textwidth]{fig_trajectory.pdf}
+\caption{Training trajectory for 7B models over 305K steps (20B tokens). \textbf{Left:} PPL vs step; thin keys lead early but converge by $\sim$150K steps. \textbf{Right:} PPL vs wall-clock time; thin keys reach any target PPL $\sim$20 hours sooner.}
+\label{fig:7b_extended_trajectory}
+\end{figure}
+
+
+=======
+\caption{Downstream evaluation of 7B from-scratch models (20B tokens, seed 137). Scores are low in absolute terms (OWT-only training) but thin keys matches full attention on all tasks.}
+\label{tab:c2_downstream}
+\begin{tabular}{lccc}
+\toprule
+Task & Full Attention & Thin Keys & $\Delta$ \\
+\midrule
+Hellaswag (acc\_norm) & 55.6 & 55.7 & $+$0.1 \\
+ARC-Challenge (acc\_norm) & 29.8 & 29.4 & $-$0.4 \\
+WinoGrande (acc) & 60.6 & 59.1 & $-$1.5 \\
+MMLU (acc) & 23.4 & 23.3 & $-$0.1 \\
+GSM8K (exact\_match) & 0.0 & 0.0 & 0.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 \paragraph{Comparison with GQA and MLA at 7B scale.}
 Table~\ref{tab:kv_7b_analytical} compares thin keys against GQA and MLA analytically at the LLaMA-7B configuration ($\dmodel = 4096$, 128K context, bf16). GQA and MLA compress both K and V, achieving larger total savings (75--93\%) than thin keys alone (37.5\%). However, thin keys composes with GQA: applying $\dselect = \dmodel/4$ to GQA-8 yields 84.4\% total KV savings---approaching MLA's 93\% without learned up/down-projections or decoupled RoPE. MLA's joint latent means thin-keys composition is a no-op, but the thin-keys insight is \emph{already embedded} in MLA: DeepSeek-V2's $d_c = 512$ for 128 heads implies an effective per-head key dimension of 4, far below $\dhead = 128$. For practitioners, factored keys offer the simplest drop-in path for existing models; for new architectures, GQA + thin keys or MLA achieve more aggressive compression \citep{mha2mla2025}.
 
 \begin{table}[h]
 \centering
+<<<<<<< HEAD
 \caption{Analytical KV cache comparison at LLaMA-7B scale (128K context, bf16). Thin keys compose with GQA by reducing $d_k$ independently.}
+=======
+\caption{Analytical KV cache comparison at LLaMA-7B scale (128K context, bf16). MLA stores a shared latent $d_c$ plus a decoupled RoPE key ($d_h^R$). Thin keys compose with GQA by reducing $d_{\text{head}}^{QK}$ independently.}
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 \label{tab:kv_7b_analytical}
 \begin{tabular}{lrrrr}
 \toprule
@@ -331,9 +385,9 @@ We apply SVD + QK fine-tuning to Mistral-7B (7.2B parameters, GQA with 32 query 
 Rank $r$ & Before FT & After FT & Control & vs Control & K cache saved \\
 \midrule
 1024 (none) & 6.69 & 5.91 & --- & baseline & 0\% \\
-512 ($k/2$) & 6.81 (+1.7\%) & 5.93 & 5.91 & +0.3\% & 50\% \\
-256 ($k/4$) & 7.84 (+17.1\%) & 6.03 & 5.91 & +2.0\% & 75\% \\
-128 ($k/8$) & 12.34 (+84.4\%) & 6.10 & 5.91 & +3.2\% & 88\% \\
+512 ($d_K/2$) & 6.81 (+1.7\%) & 5.93 & 5.91 & +0.3\% & 50\% \\
+256 ($d_K/4$) & 7.84 (+17.1\%) & 6.03 & 5.91 & +2.0\% & 75\% \\
+128 ($d_K/8$) & 12.34 (+84.4\%) & 6.10 & 5.91 & +3.2\% & 88\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -416,6 +470,7 @@ These savings compound with concurrent users and context length. Even the conser
 
 \subsection{Decode Throughput: Roofline Analysis}\label{sec:decode_throughput}
 
+<<<<<<< HEAD
 The KV cache savings translate directly to decode throughput gains. Table~\ref{tab:decode_throughput} reports measured decode throughput for Mistral-7B on a single H100 SXM GPU, showing 22--38\% speedups at batch size $\geq 4$.
 
 \begin{table}[h]
@@ -442,6 +497,22 @@ Config & 1 & 4 & 8 & 16 & 32 \\
 \end{table}
 
 Decode attention is deeply memory-bandwidth-bound: on H100 SXM ($3.35$\,TB/s bandwidth), decode attention operates $74\times$ below the compute ridge point. Throughput scales directly with bytes saved. Amdahl's law (attention fraction $f \approx 0.73$ at batch $\geq 8$) predicts $1.38\times$ overall speedup for r256---matching measured $1.38\times$ at batch 32 to within 1\%. Standard SDPA suffices; no custom Flash Attention kernels are required. Prefill roofline analysis is in Appendix~\ref{app:throughput}.
+=======
+The KV cache savings translate directly to decode throughput gains.
+
+\paragraph{Bandwidth model.}
+Autoregressive decode is deeply memory-bandwidth-bound: on H100 SXM ($3.35$\,TB/s peak), each decode step reads model weights $W$ (shared across the batch) plus per-sequence KV cache.
+For batch size $b$ and context length $n$, total bytes read per step are $W + b \cdot C_{\mathrm{kv}}$, where $C_{\mathrm{kv}} = 2\, L\, n_{\mathrm{kv}}\, d_{\mathrm{head}}\, n \cdot \beta$ and $\beta = 2$ for bf16.
+Factored keys reduce \emph{both} $W$ (thinner $W_Q$, $W_K$ projections) and $C_{\mathrm{kv}}$ (thinner K cache).
+The predicted speedup is:
+\begin{equation}\label{eq:roofline}
+\mathrm{Speedup}(b) \;=\; \frac{W + b \cdot C_{\mathrm{kv}}}{W' + b \cdot C'_{\mathrm{kv}}}
+\end{equation}
+This increases monotonically with $b$: at $b{=}0$ the gain comes only from smaller projections ($W/W'$); as $b \to \infty$ the cache term dominates and the speedup approaches $C_{\mathrm{kv}}/C'_{\mathrm{kv}}$.
+
+\paragraph{Mistral-7B measurements.}
+We measure decode throughput on a single H100 SXM (context 4096, Mistral-7B). At batch size 32, factored r256 achieves 280 tokens/s vs 195 baseline ($1.44\times$ speedup), closely matching the roofline prediction of $1.31\times$. Speedups increase with batch size as KV cache bandwidth dominates. Standard SDPA suffices; no custom Flash Attention kernels are required. Full throughput table and prefill roofline analysis are in Appendix~\ref{app:throughput}.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 
 % ============================================================
@@ -464,6 +535,7 @@ Flash Attention \citep{dao2022flashattention, flashattention32024} optimizes mem
 % ============================================================
 \section{Discussion}
 
+<<<<<<< HEAD
 \paragraph{Limitations and scope.}
 We validate training from scratch up to 7B parameters over 20B tokens. At this budget (tokens-to-parameters $\sim$3), thin keys match full attention; at truly Chinchilla-optimal budgets, a modest cost may emerge as at smaller scales. While we evaluate perplexity and five downstream tasks, other capabilities (in-context learning, instruction following, long-context retrieval) may exhibit different sensitivity.
 
@@ -472,16 +544,28 @@ Most Flash Attention implementations assume $d_k = d_v$, but standard SDPA alrea
 
 \paragraph{Implications for architecture design.}
 The standard convention $d_q = d_k = d_v$ should be reconsidered. Setting $\dselect = \dmodel / 4$ yields consistent savings across architectures and scales. We identify three deployment paths: (1)~$K$-only SVD at $\dmodel/2$ for 25\% savings with zero retraining; (2)~SVD + QK fine-tuning to $\dmodel/4$ for 75\% savings at $\sim$2\% cost; (3)~training from scratch with thin keys for future architectures---analogous to how GQA was adopted into LLaMA-2 onward.
+=======
+\paragraph{Limitations.}
+We validate up to 7B parameters over 20B tokens (tokens-to-parameters $\sim$3). At truly Chinchilla-optimal budgets ($\sim$140B tokens), a modest cost may emerge as observed at smaller scales. While we evaluate perplexity and five downstream tasks, other capabilities (in-context learning, instruction following, long-context retrieval) may exhibit different sensitivity to QK dimensionality.
+
+\paragraph{Composability with quantization.}
+KV cache quantization methods \citep{gao2024rabitq, zandieh2025turboquant, liu2024kivi, zandieh2024qjl} reduce the \emph{bit-width} of cached entries, achieving $4$--$6\times$ compression. However, quantization is inherently lossy: distortion is bounded below by Shannon's rate-distortion function. Thin keys reduce key \emph{dimensionality}, not precision, removing capacity provably redundant for selection---which is why it can be \emph{free} at scale ($9.24$ vs $9.25$ PPL at 7B). The two approaches compose: thin keys ($4\times$) + 3.5-bit quantization ($\sim$4.5$\times$) yields $\sim$18$\times$ key cache compression. Standard SDPA already achieves 25--44\% decode speedups (Appendix~\ref{app:throughput}); no custom Flash Attention kernels are required.
+
+\paragraph{Deployment paths.}
+We identify three complementary paths, in order of increasing investment.
+(1)~$K$-only SVD at $\dmodel/2$: 50\% key cache savings, zero retraining. (2)~SVD + QK fine-tuning to $\dmodel/4$: 75\% savings at $\sim$2\% cost. (3)~Training from scratch with thin keys for future architectures---analogous to how GQA was adopted into LLaMA-2 onward.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 
-% ============================================================
-% 7. CONCLUSION
-% ============================================================
 \section{Conclusion}
 
+<<<<<<< HEAD
 We identify a fundamental asymmetry in attention: selection ($QK^\top$) is an inherently low-dimensional ranking problem requiring only $\BigO(\log N)$ dimensions, while value transfer must preserve the full representational capacity of the model. From this insight, we derive \textbf{factored keys}, a zero-cost inference primitive that exploits SVD to physically shrink the key cache of any deployed model---no retraining, no calibration data, no prefill overhead---by repartitioning $W_K$ into a thin cached key projection and absorbing the remainder into the ephemeral query projection.
 
 We validate this across nine experiments from algorithmic tasks to 7B-parameter models trained on 20B tokens. At 7B scale, training from scratch with $\dselect = \dmodel/4$ matches full-attention perplexity (9.2 vs 9.3) while using 12\% fewer parameters and training 8\% faster. For existing models, SVD + lightweight QK fine-tuning achieves 75\% key cache savings at $\sim$2\% cost across a 58$\times$ scale range (GPT-2 to Mistral-7B). The approach composes with GQA and quantization for up to 16$\times$ combined compression.
+=======
+We identify a fundamental asymmetry in attention---selection requires only $\BigO(\log N)$ dimensions while value transfer needs full $\dmodel$---and derive \textbf{factored keys}, a zero-cost inference primitive that shrinks the key cache of any deployed model via SVD. At 7B scale over 20B tokens (2 seeds), thin keys match full-attention quality ($9.24$ vs $9.25$ PPL) while training 8\% faster. For existing models, SVD + QK fine-tuning achieves 75\% key cache savings at $\sim$2\% cost across GPT-2 to Mistral-7B, with 25--44\% faster decode. The approach composes with GQA and quantization for up to $18\times$ combined key cache compression.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 
 % ============================================================
@@ -643,6 +727,24 @@ Zhang, Z., et~al.
 Haris, A. and Onak, K.
 \newblock Compression barriers for autoregressive transformers.
 \newblock \emph{arXiv preprint arXiv:2502.15955}, 2025.
+<<<<<<< HEAD
+=======
+
+\bibitem[Gao et~al.(2024)]{gao2024rabitq}
+Gao, J., Gou, Y., Xu, Y., Yang, Y., Long, C., and Wong, R.~C.-W.
+\newblock Practical and asymptotically optimal quantization of high-dimensional vectors in {E}uclidean space for approximate nearest neighbor search.
+\newblock \emph{arXiv preprint arXiv:2409.09913}, 2024.
+
+\bibitem[Zandieh et~al.(2025)]{zandieh2025turboquant}
+Zandieh, A., Daliri, M., Hadian, M., and Mirrokni, V.
+\newblock {TurboQuant}: Online vector quantization with near-optimal distortion rate.
+\newblock In \emph{ICLR}, 2026.
+
+\bibitem[Zandieh et~al.(2024)]{zandieh2024qjl}
+Zandieh, A., Han, I., Daliri, M., and Karbasi, A.
+\newblock {QJL}: 1-bit quantized {JL} transform for {KV} cache quantization with zero overhead.
+\newblock In \emph{NeurIPS}, 2024.
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 \end{thebibliography}
 
@@ -888,7 +990,34 @@ F3 & GSM8K CoT (1.5M tok) & \textbf{53.7} & \textbf{52.5} & \textbf{52.0} & $\ma
 This demonstrates that the GSM8K degradation was a fine-tuning data problem, not a fundamental compression limitation. Data quality and domain match matter far more than data volume: 1.5M tokens of in-domain CoT outperform 10M tokens of generic web text.
 
 
+<<<<<<< HEAD
 \section{Prefill Roofline and Flash Attention}\label{app:throughput}
+=======
+\section{Decode Throughput and Prefill Roofline}\label{app:throughput}
+
+\begin{table}[h]
+\centering
+\caption{Decode throughput for Mistral-7B with factored keys on H100 SXM (context 4096, 128 generated tokens).}
+\label{tab:decode_throughput}
+\small
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{Batch size} \\
+\cmidrule(lr){2-6}
+ & 1 & 4 & 8 & 16 & 32 \\
+\midrule
+\multicolumn{6}{l}{\emph{Throughput (tokens/s)}} \\
+\quad Baseline ($d_k\!=\!128$) & 49.5 & 124.0 & 160.6 & 181.5 & 194.7 \\
+\quad r512 ($d_k\!=\!64$)      & 53.5 & 142.9 & 192.8 & 223.2 & 243.0 \\
+\quad r256 ($d_k\!=\!32$)      & 56.1 & 155.7 & 216.4 & 254.3 & 280.2 \\
+\midrule
+\multicolumn{6}{l}{\emph{Speedup vs.\ baseline}} \\
+\quad r512 & 1.08$\times$ & 1.15$\times$ & 1.20$\times$ & 1.23$\times$ & 1.25$\times$ \\
+\quad r256 & 1.13$\times$ & 1.26$\times$ & 1.35$\times$ & 1.40$\times$ & 1.44$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
 
 \paragraph{Prefill roofline.}
 Prefill differs from decode: the full $QK^\top$ product is computed over the entire prompt. At context length $s = 4096$ with Mistral-7B, a single layer's attention FLOPs are $\sim$137\,GFLOPs while KV reads are $\sim$2\,MB---yielding arithmetic intensity of $\sim$68{,}000~FLOP/byte, well above the H100's ridge point. Prefill attention is thus compute-bound. Reducing $d_k$ from 128 to 32 cuts $QK^\top$ FLOPs by $4\times$ per head. Standard FlashAttention-2 assumes $d_k = d_v$ for shared tile sizes; FlashAttention-3 \citep{flashattention32024} introduces more flexible tiling that could accommodate asymmetric dimensions. Standard SDPA with \texttt{enable\_math=True} already achieves 6--12\% prefill speedups.

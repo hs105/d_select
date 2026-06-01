@@ -116,7 +116,11 @@ def patch_llama_thin_keys(model, d_select=1024):
     return n_patched
 
 
+<<<<<<< HEAD
 def load_model(mode, d_select=1024, device='cuda:0'):
+=======
+def load_model(mode, d_select=1024, device='cuda:0', ckpt_path=None):
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
     """Create model architecture and load checkpoint."""
     from transformers import LlamaConfig, LlamaForCausalLM, AutoTokenizer
 
@@ -144,8 +148,14 @@ def load_model(mode, d_select=1024, device='cuda:0'):
         print(f"  Patched {n} layers with thin keys (d_select={d_select})")
 
     # Load checkpoint
+<<<<<<< HEAD
     tag = f"thin{d_select}" if mode == "thin_keys" else "full_attn"
     ckpt_path = os.path.join(CKPT_DIR, f"expC_7b_{tag}.pt")
+=======
+    if ckpt_path is None:
+        tag = f"thin{d_select}" if mode == "thin_keys" else "full_attn"
+        ckpt_path = os.path.join(CKPT_DIR, f"expC_7b_{tag}.pt")
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
     print(f"  Loading checkpoint from {ckpt_path}...")
     state_dict = torch.load(ckpt_path, map_location='cpu', weights_only=True)
     model.load_state_dict(state_dict)
@@ -173,6 +183,11 @@ def main():
     parser.add_argument('--batch_size', type=str, default='auto')
     parser.add_argument('--limit', type=int, default=None,
                         help='Limit examples per task (for testing)')
+<<<<<<< HEAD
+=======
+    parser.add_argument('--ckpt_path', type=str, default=None,
+                        help='Override checkpoint path (default: auto from CKPT_DIR)')
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
     args = parser.parse_args()
 
     print("=" * 70)
@@ -182,7 +197,12 @@ def main():
     # Load model
     t0 = time.time()
     model, tokenizer = load_model(args.mode, d_select=args.d_select,
+<<<<<<< HEAD
                                   device=args.device)
+=======
+                                  device=args.device,
+                                  ckpt_path=args.ckpt_path)
+>>>>>>> bf3cf3d61a1f558b1d95a11a23b5be4ed404e77a
     print(f"  Model ready in {time.time()-t0:.1f}s\n")
 
     # Wrap in lm-eval HFLM

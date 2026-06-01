@@ -1,0 +1,31 @@
+======================================================================
+Experiment D: expD_125M_thin192
+======================================================================
+Method:    thin_keys {'d_select': 192}
+Model:     125M (d=768, heads=12, layers=12)
+KV cache:  960 elem/tok/layer (baseline=1536, saving=37.5%)
+
+Loading data...
+  wiki.train.tokens: 101,425,671 words
+  wiki.valid.tokens: 213,886 words
+  wiki.test.tokens: 241,211 words
+  Using wikitext-103
+Vocabulary: 21,822 tokens (min_freq=200, 229,445 unique words)
+Train: 195396 seqs, Val: 412, Test: 464
+
+Parameters: 91.1M total, 17.7M attention
+
+Training (30535 steps, 5 epochs)...
+----------------------------------------------------------------------
+  Epoch 1/5: train_ppl=77.43 val_ppl=36.64 tok/s=45308 lr=0.000285 (2210s)
+  Epoch 2/5: train_ppl=32.27 val_ppl=28.69 tok/s=58767 lr=0.000215 (1704s)
+  Epoch 3/5: train_ppl=25.57 val_ppl=25.21 tok/s=58784 lr=0.000116 (1703s)
+  Epoch 4/5: train_ppl=21.13 val_ppl=23.67 tok/s=58784 lr=0.000033 (1703s)
+  Epoch 5/5: train_ppl=18.59 val_ppl=23.78 tok/s=58786 lr=0.000030 (1703s)
+----------------------------------------------------------------------
+Best val PPL: 23.67 (epoch 4)
+Test PPL: 24.09
+
+Results saved to /root/d_select/paper/experiments/logs/expD_125M_thin192.json
+
+SUMMARY: thin_keys  kv=  960 params=91.1M val_ppl=23.67 test_ppl=24.09

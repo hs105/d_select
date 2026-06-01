@@ -1,0 +1,31 @@
+======================================================================
+Experiment D: expD_125M_mla768
+======================================================================
+Method:    mla {'d_compressed': 768}
+Model:     125M (d=768, heads=12, layers=12)
+KV cache:  768 elem/tok/layer (baseline=1536, saving=50.0%)
+
+Loading data...
+  wiki.train.tokens: 101,425,671 words
+  wiki.valid.tokens: 213,886 words
+  wiki.test.tokens: 241,211 words
+  Using wikitext-103
+Vocabulary: 21,822 tokens (min_freq=200, 229,445 unique words)
+Train: 195396 seqs, Val: 412, Test: 464
+
+Parameters: 108.8M total, 35.4M attention
+
+Training (30535 steps, 5 epochs)...
+----------------------------------------------------------------------
+  Epoch 1/5: train_ppl=71.93 val_ppl=34.78 tok/s=49996 lr=0.000285 (2003s)
+  Epoch 2/5: train_ppl=30.66 val_ppl=27.45 tok/s=50002 lr=0.000215 (2003s)
+  Epoch 3/5: train_ppl=24.47 val_ppl=24.18 tok/s=50001 lr=0.000116 (2003s)
+  Epoch 4/5: train_ppl=20.21 val_ppl=22.62 tok/s=49998 lr=0.000033 (2003s)
+  Epoch 5/5: train_ppl=17.72 val_ppl=22.82 tok/s=50003 lr=0.000030 (2002s)
+----------------------------------------------------------------------
+Best val PPL: 22.62 (epoch 4)
+Test PPL: 23.11
+
+Results saved to /root/d_select/paper/experiments/logs/expD_125M_mla768.json
+
+SUMMARY: mla        kv=  768 params=108.8M val_ppl=22.62 test_ppl=23.11

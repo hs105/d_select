@@ -1,0 +1,31 @@
+{
+  "experiment": "E",
+  "scale": "125M",
+  "mode": "thin_keys",
+  "seed": 42,
+  "best_owt_ppl": 20.03225608456584,
+  "best_owt_step": 19073,
+  "best_wt103_ppl": 31.69648669337455,
+  "final_owt_ppl": 20.03225608456584,
+  "final_wt103_ppl": 31.738365174119522,
+  "total_hours": 1.7950533227125804,
+  "total_tokens": 2500000000,
+  "total_epochs": 1,
+  "n_params": 98913024,
+  "n_thin_params_saved": 10616832,
+  "model_config": {
+    "hidden_size": 768,
+    "num_heads": 12,
+    "num_layers": 12,
+    "intermediate_size": 2048,
+    "d_select": 192
+  },
+  "training_config": {
+    "lr": 0.0006,
+    "seq_len": 1024,
+    "batch_size": 8,
+    "accum": 4,
+    "world_size": 4,
+    "eff_batch": 128
+  }
+}

@@ -2,14 +2,14 @@
   "baseline": {
     "ctx4096_bs1": {
       "prefill": {
-        "avg_time_s": 0.1655,
-        "throughput_tok_s": 24745.5,
-        "peak_memory_gb": 16.36,
+        "avg_time_s": 0.1924,
+        "throughput_tok_s": 21293.3,
+        "peak_memory_gb": 16.38,
         "n_tokens": 4096
       },
       "decode": {
-        "avg_time_s": 2.8217,
-        "throughput_tok_s": 45.4,
+        "avg_time_s": 2.584,
+        "throughput_tok_s": 49.5,
         "peak_memory_gb": 15.38,
         "n_new_tokens": 128,
         "batch_size": 1
@@ -36,14 +36,14 @@
     },
     "ctx4096_bs4": {
       "prefill": {
-        "avg_time_s": 0.6442,
-        "throughput_tok_s": 25432.7,
-        "peak_memory_gb": 21.83,
+        "avg_time_s": 0.7566,
+        "throughput_tok_s": 21655.6,
+        "peak_memory_gb": 21.94,
         "n_tokens": 16384
       },
       "decode": {
-        "avg_time_s": 4.3622,
-        "throughput_tok_s": 117.4,
+        "avg_time_s": 4.1282,
+        "throughput_tok_s": 124.0,
         "peak_memory_gb": 17.98,
         "n_new_tokens": 128,
         "batch_size": 4
@@ -54,14 +54,14 @@
     },
     "ctx4096_bs8": {
       "prefill": {
-        "avg_time_s": 1.2998,
-        "throughput_tok_s": 25210.7,
-        "peak_memory_gb": 29.12,
+        "avg_time_s": 1.5433,
+        "throughput_tok_s": 21232.8,
+        "peak_memory_gb": 29.37,
         "n_tokens": 32768
       },
       "decode": {
-        "avg_time_s": 6.8622,
-        "throughput_tok_s": 149.2,
+        "avg_time_s": 6.3742,
+        "throughput_tok_s": 160.6,
         "peak_memory_gb": 21.45,
         "n_new_tokens": 128,
         "batch_size": 8
@@ -72,14 +72,14 @@
     },
     "ctx4096_bs16": {
       "prefill": {
-        "avg_time_s": 2.6257,
-        "throughput_tok_s": 24959.4,
-        "peak_memory_gb": 43.7,
+        "avg_time_s": 3.1388,
+        "throughput_tok_s": 20879.1,
+        "peak_memory_gb": 44.22,
         "n_tokens": 65536
       },
       "decode": {
-        "avg_time_s": 11.914,
-        "throughput_tok_s": 171.9,
+        "avg_time_s": 11.281,
+        "throughput_tok_s": 181.5,
         "peak_memory_gb": 28.38,
         "n_new_tokens": 128,
         "batch_size": 16
@@ -90,14 +90,14 @@
     },
     "ctx4096_bs32": {
       "prefill": {
-        "avg_time_s": 5.2748,
-        "throughput_tok_s": 24848.8,
-        "peak_memory_gb": 72.85,
+        "avg_time_s": 6.2657,
+        "throughput_tok_s": 20918.8,
+        "peak_memory_gb": 73.91,
         "n_tokens": 131072
       },
       "decode": {
-        "avg_time_s": 21.8635,
-        "throughput_tok_s": 187.3,
+        "avg_time_s": 21.0393,
+        "throughput_tok_s": 194.7,
         "peak_memory_gb": 42.24,
         "n_new_tokens": 128,
         "batch_size": 32
@@ -106,93 +106,19 @@
       "seq_len": 4096,
       "batch_size": 32
     },
-    "ctx4096_max_bs": 2,
-    "ctx16384_bs1": {
-      "prefill": {
-        "avg_time_s": 1.106,
-        "throughput_tok_s": 14813.8,
-        "peak_memory_gb": 22.08,
-        "n_tokens": 16384
-      },
-      "decode": {
-        "avg_time_s": 2.7694,
-        "throughput_tok_s": 46.2,
-        "peak_memory_gb": 16.17,
-        "n_new_tokens": 128,
-        "batch_size": 1
-      },
-      "kv_cache": {
-        "kv_cache_mb": 536.74,
-        "k_cache_mb": 268.37,
-        "v_cache_mb": 268.37,
-        "k_shape": [
-          1,
-          8,
-          4095,
-          128
-        ],
-        "v_shape": [
-          1,
-          8,
-          4095,
-          128
-        ]
-      },
-      "seq_len": 16384,
-      "batch_size": 1
-    },
-    "ctx16384_bs4": {
-      "prefill": {
-        "avg_time_s": 4.5145,
-        "throughput_tok_s": 14516.8,
-        "peak_memory_gb": 43.95,
-        "n_tokens": 65536
-      },
-      "decode": {
-        "avg_time_s": 4.3799,
-        "throughput_tok_s": 116.9,
-        "peak_memory_gb": 21.13,
-        "n_new_tokens": 128,
-        "batch_size": 4
-      },
-      "kv_cache": {},
-      "seq_len": 16384,
-      "batch_size": 4
-    },
-    "ctx16384_bs8": {
-      "prefill": {
-        "avg_time_s": 9.0148,
-        "throughput_tok_s": 14539.7,
-        "peak_memory_gb": 73.11,
-        "n_tokens": 131072
-      },
-      "decode": {
-        "avg_time_s": 6.9794,
-        "throughput_tok_s": 146.7,
-        "peak_memory_gb": 27.74,
-        "n_new_tokens": 128,
-        "batch_size": 8
-      },
-      "kv_cache": {},
-      "seq_len": 16384,
-      "batch_size": 8
-    },
-    "ctx16384_bs16": {
-      "error": "OOM"
-    },
-    "ctx16384_max_bs": 0
+    "ctx4096_max_bs": 2
   },
   "factored_r256": {
     "ctx4096_bs1": {
       "prefill": {
-        "avg_time_s": 0.1514,
-        "throughput_tok_s": 27048.9,
+        "avg_time_s": 0.1705,
+        "throughput_tok_s": 24029.3,
         "peak_memory_gb": 14.97,
         "n_tokens": 4096
       },
       "decode": {
-        "avg_time_s": 2.7815,
-        "throughput_tok_s": 46.0,
+        "avg_time_s": 2.2819,
+        "throughput_tok_s": 56.1,
         "peak_memory_gb": 14.15,
         "n_new_tokens": 128,
         "batch_size": 1
@@ -219,14 +145,14 @@
     },
     "ctx4096_bs4": {
       "prefill": {
-        "avg_time_s": 0.5867,
-        "throughput_tok_s": 27926.3,
+        "avg_time_s": 0.6598,
+        "throughput_tok_s": 24830.9,
         "peak_memory_gb": 19.33,
         "n_tokens": 16384
       },
       "decode": {
-        "avg_time_s": 3.2708,
-        "throughput_tok_s": 156.5,
+        "avg_time_s": 3.2883,
+        "throughput_tok_s": 155.7,
         "peak_memory_gb": 16.07,
         "n_new_tokens": 128,
         "batch_size": 4
@@ -237,14 +163,14 @@
     },
     "ctx4096_bs8": {
       "prefill": {
-        "avg_time_s": 1.1683,
-        "throughput_tok_s": 28047.5,
+        "avg_time_s": 1.3341,
+        "throughput_tok_s": 24562.3,
         "peak_memory_gb": 25.14,
         "n_tokens": 32768
       },
       "decode": {
-        "avg_time_s": 5.1074,
-        "throughput_tok_s": 200.5,
+        "avg_time_s": 4.732,
+        "throughput_tok_s": 216.4,
         "peak_memory_gb": 18.63,
         "n_new_tokens": 128,
         "batch_size": 8
@@ -255,14 +181,14 @@
     },
     "ctx4096_bs16": {
       "prefill": {
-        "avg_time_s": 2.3571,
-        "throughput_tok_s": 27803.4,
+        "avg_time_s": 2.742,
+        "throughput_tok_s": 23900.5,
         "peak_memory_gb": 36.77,
         "n_tokens": 65536
       },
       "decode": {
-        "avg_time_s": 8.7189,
-        "throughput_tok_s": 234.9,
+        "avg_time_s": 8.0527,
+        "throughput_tok_s": 254.3,
         "peak_memory_gb": 23.75,
         "n_new_tokens": 128,
         "batch_size": 16
@@ -273,14 +199,14 @@
     },
     "ctx4096_bs32": {
       "prefill": {
-        "avg_time_s": 4.7318,
-        "throughput_tok_s": 27700.4,
+        "avg_time_s": 5.4902,
+        "throughput_tok_s": 23874.0,
         "peak_memory_gb": 60.02,
         "n_tokens": 131072
       },
       "decode": {
-        "avg_time_s": 15.7982,
-        "throughput_tok_s": 259.3,
+        "avg_time_s": 14.6196,
+        "throughput_tok_s": 280.2,
         "peak_memory_gb": 33.98,
         "n_new_tokens": 128,
         "batch_size": 32
@@ -289,93 +215,19 @@
       "seq_len": 4096,
       "batch_size": 32
     },
-    "ctx4096_max_bs": 2,
-    "ctx16384_bs1": {
-      "prefill": {
-        "avg_time_s": 0.9896,
-        "throughput_tok_s": 16556.2,
-        "peak_memory_gb": 19.74,
-        "n_tokens": 16384
-      },
-      "decode": {
-        "avg_time_s": 2.7415,
-        "throughput_tok_s": 46.7,
-        "peak_memory_gb": 14.94,
-        "n_new_tokens": 128,
-        "batch_size": 1
-      },
-      "kv_cache": {
-        "kv_cache_mb": 335.46,
-        "k_cache_mb": 67.09,
-        "v_cache_mb": 268.37,
-        "k_shape": [
-          1,
-          8,
-          4095,
-          32
-        ],
-        "v_shape": [
-          1,
-          8,
-          4095,
-          128
-        ]
-      },
-      "seq_len": 16384,
-      "batch_size": 1
-    },
-    "ctx16384_bs4": {
-      "prefill": {
-        "avg_time_s": 3.9637,
-        "throughput_tok_s": 16534.2,
-        "peak_memory_gb": 38.38,
-        "n_tokens": 65536
-      },
-      "decode": {
-        "avg_time_s": 3.2683,
-        "throughput_tok_s": 156.7,
-        "peak_memory_gb": 19.22,
-        "n_new_tokens": 128,
-        "batch_size": 4
-      },
-      "kv_cache": {},
-      "seq_len": 16384,
-      "batch_size": 4
-    },
-    "ctx16384_bs8": {
-      "prefill": {
-        "avg_time_s": 7.9497,
-        "throughput_tok_s": 16487.7,
-        "peak_memory_gb": 63.25,
-        "n_tokens": 131072
-      },
-      "decode": {
-        "avg_time_s": 5.0926,
-        "throughput_tok_s": 201.1,
-        "peak_memory_gb": 24.92,
-        "n_new_tokens": 128,
-        "batch_size": 8
-      },
-      "kv_cache": {},
-      "seq_len": 16384,
-      "batch_size": 8
-    },
-    "ctx16384_bs16": {
-      "error": "OOM"
-    },
-    "ctx16384_max_bs": 0
+    "ctx4096_max_bs": 2
   },
   "factored_r512": {
     "ctx4096_bs1": {
       "prefill": {
-        "avg_time_s": 0.1561,
-        "throughput_tok_s": 26239.0,
+        "avg_time_s": 0.1808,
+        "throughput_tok_s": 22661.0,
         "peak_memory_gb": 15.44,
         "n_tokens": 4096
       },
       "decode": {
-        "avg_time_s": 2.35,
-        "throughput_tok_s": 54.5,
+        "avg_time_s": 2.3906,
+        "throughput_tok_s": 53.5,
         "peak_memory_gb": 14.56,
         "n_new_tokens": 128,
         "batch_size": 1
@@ -402,14 +254,14 @@
     },
     "ctx4096_bs4": {
       "prefill": {
-        "avg_time_s": 0.6129,
-        "throughput_tok_s": 26729.8,
+        "avg_time_s": 0.696,
+        "throughput_tok_s": 23539.5,
         "peak_memory_gb": 20.2,
         "n_tokens": 16384
       },
       "decode": {
-        "avg_time_s": 3.5286,
-        "throughput_tok_s": 145.1,
+        "avg_time_s": 3.584,
+        "throughput_tok_s": 142.9,
         "peak_memory_gb": 16.71,
         "n_new_tokens": 128,
         "batch_size": 4
@@ -420,14 +272,14 @@
     },
     "ctx4096_bs8": {
       "prefill": {
-        "avg_time_s": 1.2073,
-        "throughput_tok_s": 27141.0,
+        "avg_time_s": 1.4217,
+        "throughput_tok_s": 23049.0,
         "peak_memory_gb": 26.55,
         "n_tokens": 32768
       },
       "decode": {
-        "avg_time_s": 5.6288,
-        "throughput_tok_s": 181.9,
+        "avg_time_s": 5.3125,
+        "throughput_tok_s": 192.8,
         "peak_memory_gb": 19.57,
         "n_new_tokens": 128,
         "batch_size": 8
@@ -438,14 +290,14 @@
     },
     "ctx4096_bs16": {
       "prefill": {
-        "avg_time_s": 2.4394,
-        "throughput_tok_s": 26865.3,
+        "avg_time_s": 2.8891,
+        "throughput_tok_s": 22684.1,
         "peak_memory_gb": 39.25,
         "n_tokens": 65536
       },
       "decode": {
-        "avg_time_s": 9.7101,
-        "throughput_tok_s": 210.9,
+        "avg_time_s": 9.1775,
+        "throughput_tok_s": 223.2,
         "peak_memory_gb": 25.29,
         "n_new_tokens": 128,
         "batch_size": 16
@@ -456,14 +308,14 @@
     },
     "ctx4096_bs32": {
       "prefill": {
-        "avg_time_s": 4.8981,
-        "throughput_tok_s": 26759.9,
+        "avg_time_s": 5.7722,
+        "throughput_tok_s": 22707.6,
         "peak_memory_gb": 64.65,
         "n_tokens": 131072
       },
       "decode": {
-        "avg_time_s": 17.7919,
-        "throughput_tok_s": 230.2,
+        "avg_time_s": 16.8564,
+        "throughput_tok_s": 243.0,
         "peak_memory_gb": 36.73,
         "n_new_tokens": 128,
         "batch_size": 32
@@ -472,80 +324,6 @@
       "seq_len": 4096,
       "batch_size": 32
     },
-    "ctx4096_max_bs": 2,
-    "ctx16384_bs1": {
-      "prefill": {
-        "avg_time_s": 1.0065,
-        "throughput_tok_s": 16278.9,
-        "peak_memory_gb": 20.61,
-        "n_tokens": 16384
-      },
-      "decode": {
-        "avg_time_s": 2.4902,
-        "throughput_tok_s": 51.4,
-        "peak_memory_gb": 15.35,
-        "n_new_tokens": 128,
-        "batch_size": 1
-      },
-      "kv_cache": {
-        "kv_cache_mb": 402.55,
-        "k_cache_mb": 134.18,
-        "v_cache_mb": 268.37,
-        "k_shape": [
-          1,
-          8,
-          4095,
-          64
-        ],
-        "v_shape": [
-          1,
-          8,
-          4095,
-          128
-        ]
-      },
-      "seq_len": 16384,
-      "batch_size": 1
-    },
-    "ctx16384_bs4": {
-      "prefill": {
-        "avg_time_s": 4.0463,
-        "throughput_tok_s": 16196.4,
-        "peak_memory_gb": 40.87,
-        "n_tokens": 65536
-      },
-      "decode": {
-        "avg_time_s": 3.538,
-        "throughput_tok_s": 144.7,
-        "peak_memory_gb": 19.85,
-        "n_new_tokens": 128,
-        "batch_size": 4
-      },
-      "kv_cache": {},
-      "seq_len": 16384,
-      "batch_size": 4
-    },
-    "ctx16384_bs8": {
-      "prefill": {
-        "avg_time_s": 8.1137,
-        "throughput_tok_s": 16154.3,
-        "peak_memory_gb": 67.88,
-        "n_tokens": 131072
-      },
-      "decode": {
-        "avg_time_s": 5.6171,
-        "throughput_tok_s": 182.3,
-        "peak_memory_gb": 25.86,
-        "n_new_tokens": 128,
-        "batch_size": 8
-      },
-      "kv_cache": {},
-      "seq_len": 16384,
-      "batch_size": 8
-    },
-    "ctx16384_bs16": {
-      "error": "OOM"
-    },
-    "ctx16384_max_bs": 0
+    "ctx4096_max_bs": 2
   }
 }
