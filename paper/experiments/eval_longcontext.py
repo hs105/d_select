@@ -36,7 +36,67 @@ import time
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+
+
+# ============================================================
+# Compat: handle old transformers (4.22) that lack LlamaTokenizer
+# ============================================================
+def load_tokenizer(model_path):
+    """Load tokenizer with fallback for old transformers versions."""
+    # Try AutoTokenizer first (works on transformers >= 4.34)
+    try:
+        from transformers import AutoTokenizer
+        return AutoTokenizer.from_pretrained(model_path)
+    except (ValueError, ImportError) as e:
+        if "LlamaTokenizer" not in str(e) and "does not exist" not in str(e):
+            raise
+
+    # Fallback: load from tokenizer.json directly (works on any version)
+    print(f"  AutoTokenizer failed (old transformers?), trying fallback...")
+    tokenizer_json = os.path.join(model_path, "tokenizer.json")
+    if os.path.exists(tokenizer_json):
+        from transformers import PreTrainedTokenizerFast
+        tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_json)
+        # Load special tokens from tokenizer_config.json if available
+        config_file = os.path.join(model_path, "tokenizer_config.json")
+        if os.path.exists(config_file):
+            with open(config_file) as f:
+                tok_config = json.load(f)
+            if "eos_token" in tok_config:
+                eos = tok_config["eos_token"]
+                if isinstance(eos, dict):
+                    eos = eos.get("content", "</s>")
+                tokenizer.eos_token = eos
+            if "bos_token" in tok_config:
+                bos = tok_config["bos_token"]
+                if isinstance(bos, dict):
+                    bos = bos.get("content", "<s>")
+                tokenizer.bos_token = bos
+        print(f"  Loaded tokenizer from {tokenizer_json} (vocab size: {len(tokenizer)})")
+        return tokenizer
+
+    raise RuntimeError(
+        f"Cannot load tokenizer from {model_path}. "
+        f"Need transformers >= 4.34 for AutoTokenizer, or tokenizer.json in model dir."
+    )
+
+
+def load_model(model_path, device):
+    """Load model with fallback for old transformers versions."""
+    from transformers import AutoModelForCausalLM
+    # Try flash_attention_2 first, then sdpa, then default
+    for attn_impl in ["flash_attention_2", "sdpa", None]:
+        try:
+            kwargs = dict(torch_dtype=torch.bfloat16)
+            if attn_impl:
+                kwargs["attn_implementation"] = attn_impl
+            model = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
+            return model.to(device)
+        except (ImportError, ValueError, TypeError) as e:
+            if attn_impl is None:
+                raise
+            continue
+    raise RuntimeError(f"Failed to load model from {model_path}")
 
 
 # ============================================================
@@ -567,7 +627,7 @@ def main():
         print(f"  GPU: {torch.cuda.get_device_name(device)}")
         print(f"  GPU memory: {torch.cuda.get_device_properties(device).total_memory / 1e9:.1f} GB")
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path)
+    tokenizer = load_tokenizer(args.model_path)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -584,11 +644,7 @@ def main():
             ckpt_path = os.path.join(args.checkpoint_dir, f"rank_{rank}")
             if os.path.exists(ckpt_path):
                 print(f"\nLoading fine-tuned checkpoint from {ckpt_path}...", flush=True)
-                model = AutoModelForCausalLM.from_pretrained(
-                    ckpt_path,
-                    torch_dtype=torch.bfloat16,
-                    attn_implementation="flash_attention_2",
-                ).to(device)
+                model = load_model(ckpt_path, device)
             else:
                 print(f"  Checkpoint {ckpt_path} not found, using on-the-fly SVD")
                 model = None
@@ -598,20 +654,7 @@ def main():
         if model is None:
             print(f"\nLoading model from {args.model_path}...", flush=True)
             t0 = time.time()
-            # Try flash_attention_2 first, fall back to sdpa
-            try:
-                model = AutoModelForCausalLM.from_pretrained(
-                    args.model_path,
-                    torch_dtype=torch.bfloat16,
-                    attn_implementation="flash_attention_2",
-                ).to(device)
-            except (ImportError, ValueError):
-                print("  flash_attention_2 unavailable, using sdpa", flush=True)
-                model = AutoModelForCausalLM.from_pretrained(
-                    args.model_path,
-                    torch_dtype=torch.bfloat16,
-                    attn_implementation="sdpa",
-                ).to(device)
+            model = load_model(args.model_path, device)
             print(f"  Loaded in {time.time()-t0:.1f}s", flush=True)
 
             if rank < 1024:
